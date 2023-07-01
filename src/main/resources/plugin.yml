@@ -1,0 +1,4 @@
+name: ModifiedBosses
+version: '${project.version}'
+main: net.reworlds.modifiedbosses.ModifiedBosses
+api-version: '1.20'
