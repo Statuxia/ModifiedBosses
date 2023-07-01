@@ -1,13 +1,13 @@
-package net.reworlds.modifiedbosses.boss.interstellardevourer;
+package net.reworlds.modifiedbosses.boss.dragon;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 import net.reworlds.modifiedbosses.ModifiedBosses;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.World;
+import net.reworlds.modifiedbosses.runes.Charm;
+import net.reworlds.modifiedbosses.runes.Charms;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.boss.BarColor;
@@ -16,39 +16,44 @@ import org.bukkit.boss.DragonBattle;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-public class InterstellarDevourer {
+public class Dragon {
 
+    @Getter
     private static final HashMap<Player, Integer> attackedBy = new HashMap<>();
+    @Getter
     private static final Set<Player> nearPlayers = new HashSet<>();
     @Getter
     @Setter
     private static World battleWorld;
+    @Getter
     private static EnderDragon dragon;
-    @Getter(AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PUBLIC)
     private static boolean isFighting;
     @Getter
     private static int phase;
-    private static BukkitTask findNearPlayers;
+    private static BukkitTask dragonScheduler;
     private static Team dragonTeam;
-
+    @Getter
+    private static long lastAbility;
 
     public static boolean isSameDragon(EnderDragon dragon) {
-        return InterstellarDevourer.dragon.equals(dragon);
+        return Dragon.dragon.equals(dragon);
     }
 
     public static void findDragon() {
-        if (InterstellarDevourer.dragon != null && !InterstellarDevourer.dragon.isDead()) {
+        if (Dragon.dragon != null && !Dragon.dragon.isDead()) {
             return;
         }
 
@@ -63,17 +68,20 @@ public class InterstellarDevourer {
 
         EnderDragon dragon = dragonBattle.getEnderDragon();
         if (dragon != null && !dragon.isDead()) {
-            InterstellarDevourer.dragon = dragon;
+            Dragon.dragon = dragon;
             setDefaultSettings();
+            activateScheduler();
         }
     }
 
     public static void selectDragon(EnderDragon dragon) {
-        if (InterstellarDevourer.dragon == null || InterstellarDevourer.dragon.isDead()) {
+        if (Dragon.dragon == null || Dragon.dragon.isDead()) {
             if (dragon.isDead()) {
                 findDragon();
             } else {
-                InterstellarDevourer.dragon = dragon;
+                Dragon.dragon = dragon;
+                setDefaultSettings();
+                activateScheduler();
             }
         }
     }
@@ -83,14 +91,13 @@ public class InterstellarDevourer {
             return;
         }
         phase = 0;
-
         dragon.setInvulnerable(true);
 
         AttributeInstance maxHealth = dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(2000f);
         }
-        dragon.setHealth(2000f);
+        dragon.setHealth(1020f);
 
         AttributeInstance attack = dragon.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (attack != null) {
@@ -103,7 +110,6 @@ public class InterstellarDevourer {
         }
 
         Scoreboard mainScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-
         try {
             dragonTeam = mainScoreboard.registerNewTeam(ChatColor.DARK_PURPLE + "team");
         } catch (IllegalArgumentException ignored) {
@@ -112,88 +118,135 @@ public class InterstellarDevourer {
         dragonTeam.setColor(ChatColor.DARK_PURPLE);
         dragonTeam.addEntity(dragon);
         dragon.setGlowing(true);
-        findNearPlayers = Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
-            nearPlayers.clear();
-            AtomicBoolean isCrystalsInRange = new AtomicBoolean(false);
-            dragon.getNearbyEntities(200, 200, 200).forEach(entity -> {
-                if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR) {
-                    nearPlayers.add(player);
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 0));
-                }
+    }
 
-                if (entity instanceof EnderCrystal crystal) {
-                    if (dragonTeam != null) {
-                        dragonTeam.addEntity(crystal);
-                        crystal.setGlowing(true);
+    private static void activateScheduler() {
+        if (dragonScheduler == null || dragonScheduler.isCancelled()) {
+            dragonScheduler = Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
+                Bukkit.getLogger().info("isFighting -> " + isFighting);
+                if (dragon == null || dragon.isDead()) {
+                    stopBattle();
+                }
+                nearPlayers.clear();
+                AtomicBoolean isCrystalsInRange = new AtomicBoolean(false);
+                dragon.getNearbyEntities(200, 200, 200).forEach(entity -> {
+                    if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR) {
+                        nearPlayers.add(player);
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 0));
                     }
-                    isCrystalsInRange.set(true);
+
+                    if (entity instanceof EnderCrystal crystal) {
+                        if (dragonTeam != null) {
+                            dragonTeam.addEntity(crystal);
+                            crystal.setGlowing(true);
+                        }
+                        isCrystalsInRange.set(true);
+                    }
+                });
+                if (!nearPlayers.isEmpty()) {
+                    startBattle();
                 }
-            });
-            dragon.setInvulnerable(isCrystalsInRange.get());
 
-            Bukkit.getLogger().info(" - " + nearPlayers.size());
-            Bukkit.getLogger().info(" - " + nearPlayers.isEmpty());
-            Bukkit.getLogger().info(" - " + isFighting);
-            if (nearPlayers.isEmpty() && isFighting()) {
-                Bukkit.getLogger().info("- stop battle");
-                stopBattle();
-            }
-        }, 0, 50);
+                dragon.setInvulnerable(isCrystalsInRange.get());
 
+                if (!dragon.isInvulnerable()) {
+                    phase = 1;
+                }
+
+                if (dragon.getHealth() <= 1000) {
+                    phase = 2;
+                }
+
+                lastAbility = Abilities.activate();
+
+                if (nearPlayers.isEmpty() && isFighting()) {
+                    stopBattle();
+                }
+            }, 0, 50);
+        }
+    }
+
+    private static void deactivateScheduler() {
+        if (dragonScheduler != null && !dragonScheduler.isCancelled()) {
+            dragonScheduler.cancel();
+        }
     }
 
 
     public static void startBattle() {
-        Bukkit.getLogger().info("startBattle");
         if (isFighting) {
-            Bukkit.getLogger().info("- fighting");
             return;
         }
 
         findDragon();
         if (dragon == null || dragon.isDead()) {
-            Bukkit.getLogger().info("- I.D. is null or dead");
             return;
         }
 
         isFighting = true;
-        Bukkit.getLogger().info("- fighting = " + isFighting);
-        phase = 1;
-        Bukkit.getLogger().info("- phase = " + phase);
         setDefaultSettings();
-
-        // TODO
+        activateScheduler();
     }
 
     public static void stopBattle() {
-        Bukkit.getLogger().info("stopBattle");
-
-        attackedBy.forEach((player, damage) -> Bukkit.getLogger().info(" - " + player.getName() + " " + damage));
-
         if (!isFighting) {
-            Bukkit.getLogger().info("- is fighting = " + isFighting);
             return;
         }
         isFighting = false;
 
         if (dragon != null && !dragon.isDead()) {
-            Bukkit.getLogger().info("- dragon is alive");
             setDefaultSettings();
             attackedBy.clear();
             nearPlayers.clear();
             return;
         }
 
-        Bukkit.getLogger().info("- rewards");
         giveReward();
         attackedBy.clear();
         nearPlayers.clear();
-        findNearPlayers.cancel();
+        deactivateScheduler();
+        phase = 0;
     }
 
-
     private static void giveReward() {
-        // TODO: Prises
+        Bukkit.getLogger().info("giveReward");
+        attackedBy.forEach((player, integer) -> {
+            Bukkit.getLogger().info(player.getName());
+        });
+        List<Player> top5 = getTop(5);
+        attackedBy.forEach((player, integer) -> {
+            player.sendMessage("Топ по урону");
+            for (int i = 0; i < top5.size(); i++) {
+                Player top = top5.get(i);
+                player.sendMessage(Component.text((i + 1) + ". " + top.getName() + " " + attackedBy.get(top)));
+            }
+        });
+        attackedBy.forEach((player, integer) -> {
+            if (integer > 50) {
+                giveReward(player);
+            }
+        });
+    }
+
+    private static List<Player> getTop(int limit) {
+        HashMap<Player, Integer> top = Dragon.getAttackedBy();
+        return top.entrySet().stream()
+                .sorted(Map.Entry.<Player, Integer>comparingByValue().reversed()).limit(limit).map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+    }
+
+    public static void giveReward(Player player) {
+        player.giveExp(1395);
+        if (ThreadLocalRandom.current().nextInt(100) < 71) {
+            player.getInventory().addItem(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 4)));
+        }
+        if (ThreadLocalRandom.current().nextInt(100) < 31) {
+            if (ThreadLocalRandom.current().nextInt(100) < 21) {
+                player.getInventory().addItem(Charms.EPIC.get(ThreadLocalRandom.current().nextInt(Charms.EPIC.size())).getRune());
+            } else {
+                player.getInventory().addItem(Charms.RARE.get(ThreadLocalRandom.current().nextInt(Charms.RARE.size())).getRune());
+            }
+        }
     }
 
     public static void addDamage(Player player, double damage) {

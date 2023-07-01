@@ -13,7 +13,7 @@ import java.util.List;
 
 import static org.bukkit.potion.PotionEffectType.*;
 
-public class Rune {
+public class Charm {
 
     private final int level;
     @Getter
@@ -21,7 +21,7 @@ public class Rune {
     private String rawName;
     private String name;
 
-    public Rune(PotionEffectType type, int level) {
+    public Charm(PotionEffectType type, int level) {
         this.level = Math.max(0, Math.min(2, level));
         makeItem();
         addName(type);
@@ -29,7 +29,12 @@ public class Rune {
     }
 
     public static PotionEffectType getPotionEffectType(String name, int endIndex) {
-        String effectName = name.substring(name.indexOf(" ", 5) + 1, name.indexOf(String.valueOf(endIndex)) - 1);
+        String effectName;
+        try {
+            effectName = name.substring(name.indexOf(" ", 7) + 1, name.indexOf(String.valueOf(endIndex)) - 1);
+        } catch (StringIndexOutOfBoundsException exception) {
+            return null;
+        }
         switch (effectName) {
             case "сопротивления" -> {
                 return DAMAGE_RESISTANCE;
@@ -89,12 +94,19 @@ public class Rune {
     }
 
     private void addName(PotionEffectType type) {
+        rawName = getName(type);
         switch (level) {
-            case 0 -> name = "§b";
+            case 0 -> {
+                if (rawName.equals("сытости")) {
+                    name = "§d";
+                } else {
+                    name = "§b";
+                }
+            }
             case 1 -> name = "§d";
             case 2 -> name = "§6";
         }
-        rawName = getName(type);
+
         name += "Талисман " + rawName;
         ItemMeta meta = rune.getItemMeta();
         meta.displayName(Component.text(name));
@@ -109,6 +121,9 @@ public class Rune {
 
     private String getName(PotionEffectType type) {
         switch (type.getName().toLowerCase()) {
+            case "increase_damage" -> {
+                return "силы";
+            }
             case "damage_resistance" -> {
                 return "сопротивления";
             }
