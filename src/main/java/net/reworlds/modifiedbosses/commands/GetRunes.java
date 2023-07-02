@@ -1,6 +1,6 @@
 package net.reworlds.modifiedbosses.commands;
 
-import net.reworlds.modifiedbosses.runes.Charms;
+import net.reworlds.modifiedbosses.charms.Charms;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;

@@ -1,4 +1,4 @@
-package net.reworlds.modifiedbosses.runes;
+package net.reworlds.modifiedbosses.charms;
 
 import java.util.List;
 

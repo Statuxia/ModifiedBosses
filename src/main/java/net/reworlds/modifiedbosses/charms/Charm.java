@@ -1,4 +1,4 @@
-package net.reworlds.modifiedbosses.runes;
+package net.reworlds.modifiedbosses.charms;
 
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
@@ -28,6 +28,10 @@ public class Charm {
         addLore();
     }
 
+    public static int getLevel(String name) {
+        return name.contains("0") ? 0 : name.contains("1") ? 1 : name.contains("2") ? 2 : -1;
+    }
+
     public static PotionEffectType getPotionEffectType(String name, int endIndex) {
         String effectName;
         try {
@@ -36,56 +40,55 @@ public class Charm {
             return null;
         }
         switch (effectName) {
-            case "сопротивления" -> {
+            case "Силы" -> {
+                return INCREASE_DAMAGE;
+            }
+            case "Сопротивления" -> {
                 return DAMAGE_RESISTANCE;
             }
-            case "спешки" -> {
+            case "Спешки" -> {
                 return FAST_DIGGING;
             }
-            case "грации дельфина" -> {
+            case "Грации Дельфина" -> {
                 return DOLPHINS_GRACE;
             }
-            case "огнестойкости" -> {
+            case "Огнестойкости" -> {
                 return FIRE_RESISTANCE;
             }
-            case "прыгучести" -> {
+            case "Прыгучести" -> {
                 return JUMP;
             }
-            case "ночного зрения" -> {
+            case "Ночного Зрения" -> {
                 return NIGHT_VISION;
             }
-            case "регенерации" -> {
+            case "Регенерации" -> {
                 return REGENERATION;
             }
-            case "сытости" -> {
+            case "Сытости" -> {
                 return SATURATION;
             }
-            case "подводного дыхания" -> {
+            case "Подводного Дыхания" -> {
                 return WATER_BREATHING;
             }
-            case "скорости" -> {
+            case "Скорости" -> {
                 return SPEED;
             }
-            case "силы источника" -> {
+            case "Силы Источника" -> {
                 return CONDUIT_POWER;
             }
-            case "замедленного падения" -> {
+            case "Замедленного Падения" -> {
                 return SLOW_FALLING;
             }
-            case "невидимости" -> {
+            case "Невидимости" -> {
                 return INVISIBILITY;
             }
-            case "свечения" -> {
+            case "Свечения" -> {
                 return GLOWING;
             }
             default -> {
                 return null;
             }
         }
-    }
-
-    public static int getLevel(String name) {
-        return name.contains("0") ? 0 : name.contains("1") ? 1 : name.contains("2") ? 2 : -1;
     }
 
     private void makeItem() {
@@ -97,7 +100,7 @@ public class Charm {
         rawName = getName(type);
         switch (level) {
             case 0 -> {
-                if (rawName.equals("сытости")) {
+                if (rawName.equals("Сытости")) {
                     name = "§d";
                 } else {
                     name = "§b";
@@ -122,52 +125,52 @@ public class Charm {
     private String getName(PotionEffectType type) {
         switch (type.getName().toLowerCase()) {
             case "increase_damage" -> {
-                return "силы";
+                return "Силы";
             }
             case "damage_resistance" -> {
-                return "сопротивления";
+                return "Сопротивления";
             }
             case "fast_digging" -> {
-                return "спешки";
+                return "Спешки";
             }
             case "dolphins_grace" -> {
-                return "грации дельфина";
+                return "Грации Дельфина";
             }
             case "fire_resistance" -> {
-                return "огнестойкости";
+                return "Огнестойкости";
             }
             case "jump" -> {
-                return "прыгучести";
+                return "Прыгучести";
             }
             case "night_vision" -> {
-                return "ночного зрения";
+                return "Ночного Зрения";
             }
             case "regeneration" -> {
-                return "регенерации";
+                return "Регенерации";
             }
             case "saturation" -> {
-                return "сытости";
+                return "Сытости";
             }
             case "water_breathing" -> {
-                return "подводного дыхания";
+                return "Подводного Дыхания";
             }
             case "speed" -> {
-                return "скорости";
+                return "Скорости";
             }
             case "conduit_power" -> {
-                return "силы источника";
+                return "Силы Источника";
             }
             case "slow_falling" -> {
-                return "замедленного падения";
+                return "Замедленного Падения";
             }
             case "invisibility" -> {
-                return "невидимости";
+                return "Невидимости";
             }
             case "glowing" -> {
-                return "свечения";
+                return "Свечения";
             }
             default -> {
-                return "без эффекта";
+                return "Без Эффекта";
             }
         }
     }

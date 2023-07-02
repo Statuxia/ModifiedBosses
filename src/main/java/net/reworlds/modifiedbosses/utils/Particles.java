@@ -10,7 +10,8 @@ import java.util.List;
 
 public class Particles {
 
-    public static void sphere(Location location, Color color, double radius) {
+    public static void sphere(Location defaultLocation, Color color, double radius) {
+        Location location = defaultLocation.clone();
         for (double phi = 0; phi <= Math.PI; phi += Math.PI / 30) {
             double y = radius * Math.cos(phi) + 1.5;
             for (double theta = 0; theta <= 2 * Math.PI; theta += Math.PI / 30) {
@@ -24,7 +25,9 @@ public class Particles {
         }
     }
 
-    public static List<Location> particleLine(Location first, Location second, Color color) {
+    public static List<Location> particleLine(Location defaultFirst, Location defaultSecond, Color color) {
+        Location first = defaultFirst.clone();
+        Location second = defaultSecond.clone();
         List<Location> locations = Lists.newArrayList();
         Vector vector = direction(first, second);
         for (double i = 1; i <= first.distance(second); i += 0.5) {
@@ -44,7 +47,8 @@ public class Particles {
         return to.subtract(from);
     }
 
-    public static List<Location> circle(Location location, Particle particle, double radius) {
+    public static List<Location> circle(Location defaultLocation, Particle particle, double radius) {
+        Location location = defaultLocation.clone();
         List<Location> list = Lists.newArrayList();
         for (double t = 0; t <= 2 * Math.PI * radius; t += 0.2) {
             double x = (radius * Math.cos(t)) + location.getX();
@@ -56,13 +60,13 @@ public class Particles {
         return list;
     }
 
-    public static void circle(Location location, Color color, double radius) {
+    public static void circle(Location defaultLocation, Color color, double radius) {
+        Location location = defaultLocation.clone();
         for (double t = 0; t <= 2 * Math.PI * radius; t += 0.2) {
             double x = (radius * Math.cos(t)) + location.getX();
             double z = location.getZ() + radius * Math.sin(t);
             Location spawn = new Location(location.getWorld(), x, location.getY() + 0.3, z);
             spawn.getWorld().spawnParticle(Particle.REDSTONE, spawn, 0, new Particle.DustOptions(color, 1));
         }
-        return;
     }
 }

@@ -3,106 +3,89 @@ package net.reworlds.modifiedbosses;
 import com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent;
 import net.reworlds.modifiedbosses.boss.dragon.Abilities;
 import net.reworlds.modifiedbosses.boss.dragon.Dragon;
+import net.reworlds.modifiedbosses.utils.Damage;
 import net.reworlds.modifiedbosses.utils.Particles;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Team;
+import org.bukkit.event.player.*;
 
 public class Events implements Listener {
 
     @EventHandler
-    public void onEntityResurrect(EntityResurrectEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            player.setCooldown(Material.TOTEM_OF_UNDYING, 6000);
-        }
-    }
-
-    @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (event.getPlayer().getLocation().getWorld().equals(Dragon.getBattleWorld())) {
-            Dragon.startBattle();
-
-            Scoreboard mainScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-            for (ChatColor value : ChatColor.values()) {
-                Team team;
-                try {
-                    team = mainScoreboard.registerNewTeam(value + "team");
-                } catch (IllegalArgumentException ignored) {
-                    try {
-                        team = mainScoreboard.getTeam(value + "team");
-                    } catch (IllegalArgumentException ignored1) {
-                        return;
-                    }
-                }
-                team.removeEntity(event.getPlayer());
-                event.getPlayer().setGlowing(false);
-            }
+        Player player = event.getPlayer();
+        if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
+            player.setGlowing(false);
         }
     }
 
     @EventHandler
     public void onPlayerLeft(PlayerQuitEvent event) {
-        if (event.getPlayer().getLocation().getWorld().equals(Dragon.getBattleWorld())) {
-            event.getPlayer().setGlowing(false);
-            if (Abilities.getBoilingBloodTeam() != null) {
-                Abilities.getBoilingBloodTeam().removeEntity(event.getPlayer());
-            }
-            if (Abilities.getSoulBombTeam() != null) {
-                Abilities.getSoulBombTeam().removeEntity(event.getPlayer());
-            }
-            if (Abilities.getPlagueSurfaceTeam() != null) {
-                Abilities.getPlagueSurfaceTeam().removeEntity(event.getPlayer());
-            }
-            event.getPlayer().damage(200, Dragon.getDragon());
-            Dragon.getAttackedBy().remove(event.getPlayer());
+        Player player = event.getPlayer();
+        if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
+            player.setGlowing(false);
+        }
+        Damage.damage(player, Dragon.getDragon(), 200);
+        Dragon.removeAttackedBy(player);
+    }
+
+    @EventHandler
+    public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
+        if (Dragon.isSameWorld(event.getPlayer()) && Dragon.isNearDragon(event.getPlayer())) {
+            event.setCancelled(true);
+            event.getPlayer().setGliding(false);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getPlayer();
+        if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
+            player.setGlowing(false);
         }
     }
 
     @EventHandler
     public void onTeleportToEnd(PlayerPortalEvent event) {
-        if (event.getTo().getWorld().equals(Dragon.getBattleWorld())) {
-            Dragon.startBattle();
+        Player player = event.getPlayer();
+        if (Dragon.isSameWorld(player) && Dragon.isNearCenter(player) && !Dragon.isActivated()) {
+            Dragon.activateDragon();
         }
     }
 
     @EventHandler
     public void onEntityTeleport(EntityTeleportEvent event) {
-        if (event.getEntity() instanceof EnderDragon) {
+        if (event.getEntity() instanceof EnderDragon || event.getEntity() instanceof EnderDragonPart) {
             event.setCancelled(true);
             return;
         }
-        if (event.getEntity() instanceof Player && event.getTo() != null
-                && event.getTo().getWorld().equals(Dragon.getBattleWorld())) {
-            Dragon.startBattle();
+
+        if (event.getEntity() instanceof Player player && Dragon.isSameWorld(player)
+                && Dragon.isNearCenter(player) && !Dragon.isActivated()) {
+            Dragon.activateDragon();
         }
     }
 
     @EventHandler
     public void onEntityTeleport(EntityTeleportEndGatewayEvent event) {
-        if (event.getEntity() instanceof EnderDragon) {
+        if (event.getEntity() instanceof EnderDragon || event.getEntity() instanceof EnderDragonPart) {
             event.setCancelled(true);
+            return;
         }
 
-        if (event.getEntity() instanceof Player && event.getTo() != null
-                && event.getTo().getWorld().equals(Dragon.getBattleWorld())) {
-            Dragon.startBattle();
+        if (event.getEntity() instanceof Player player && Dragon.isSameWorld(player)
+                && Dragon.isNearCenter(player) && !Dragon.isActivated()) {
+            Dragon.activateDragon();
         }
     }
 
     @EventHandler
-    public void onEntitySpawn(EntitySpawnEvent event) {
+    public void onDragonSpawn(EntitySpawnEvent event) {
         if (event.getEntity() instanceof EnderDragon dragon) {
             Dragon.selectDragon(dragon);
         }
@@ -157,13 +140,38 @@ public class Events implements Listener {
 
             if (event.getDamager() instanceof Player player) {
                 Dragon.addDamage(player, event.getDamage());
-                player.damage(event.getDamage() / 3, Dragon.getDragon());
+                Damage.damage(player, Dragon.getDragon(), event.getDamage() / 2);
                 return;
             }
             if (event.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player player) {
                 Dragon.addDamage(player, event.getDamage());
-                player.damage(event.getDamage() / 3, Dragon.getDragon());
+                Damage.damage(player, Dragon.getDragon(), event.getDamage() / 2);
             }
         }
+    }
+
+    @EventHandler
+    public void onPlayerRessurectOnBattle(EntityResurrectEvent event) {
+        if (event.getEntity() instanceof Player player && Dragon.isSameWorld(player)
+                && Dragon.isNearCenter(player) && Dragon.isActivated()) {
+            player.setCooldown(Material.TOTEM_OF_UNDYING, 6000);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerPickupItem(PlayerPickupItemEvent event) {
+        Item item = event.getItem();
+        Player player = event.getPlayer();
+
+        if (item.getScoreboardTags().size() == 0) {
+            return;
+        }
+
+        if (!item.getScoreboardTags().contains(player.getName())) {
+            event.setCancelled(true);
+            return;
+        }
+
+        item.removeScoreboardTag(player.getName());
     }
 }
