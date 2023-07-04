@@ -12,13 +12,21 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Events implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        if (!Dragon.isActivated() || !Dragon.isSameWorld(player) || !Dragon.isNearDragon(player)) {
+            player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+        }
         if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
             player.setGlowing(false);
         }
@@ -27,27 +35,38 @@ public class Events implements Listener {
     @EventHandler
     public void onPlayerLeft(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
-            player.setGlowing(false);
+        if (Dragon.isSameWorld(player)) {
+            if (Abilities.removeEntityFromTeam(player)) {
+                player.setGlowing(false);
+            }
+            if (Dragon.isActivated() && Dragon.isNearDragon(player)) {
+                Damage.damage(player, Dragon.getDragon(), 200);
+                Dragon.removeAttackedBy(player);
+            }
         }
-        Damage.damage(player, Dragon.getDragon(), 200);
-        Dragon.removeAttackedBy(player);
     }
 
     @EventHandler
-    public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
-        if (Dragon.isSameWorld(event.getPlayer()) && Dragon.isNearDragon(event.getPlayer())) {
-            event.setCancelled(true);
-            event.getPlayer().setGliding(false);
+    public void onGliding(EntityToggleGlideEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            if (Dragon.isSameWorld(player) && Dragon.isNearDragon(player)) {
+                event.setCancelled(true);
+                player.setGliding(false);
+            }
         }
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
+//        if (Dragon.isActivated() && Dragon.isSameWorld(player)) {
+//            event.deathMessage(null);
+//        }
+
         if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
             player.setGlowing(false);
         }
+        Dragon.removeAttackedBy(player);
     }
 
     @EventHandler
@@ -140,12 +159,16 @@ public class Events implements Listener {
 
             if (event.getDamager() instanceof Player player) {
                 Dragon.addDamage(player, event.getDamage());
-                Damage.damage(player, Dragon.getDragon(), event.getDamage() / 2);
+                if (ThreadLocalRandom.current().nextBoolean()) {
+                    Damage.damage(player, Dragon.getDragon(), event.getDamage() / 3);
+                }
                 return;
             }
             if (event.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player player) {
                 Dragon.addDamage(player, event.getDamage());
-                Damage.damage(player, Dragon.getDragon(), event.getDamage() / 2);
+                if (ThreadLocalRandom.current().nextBoolean()) {
+                    Damage.damage(player, Dragon.getDragon(), event.getDamage() / 3);
+                }
             }
         }
     }

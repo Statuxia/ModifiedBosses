@@ -7,12 +7,17 @@ public class Damage {
 
     public static void damage(LivingEntity damaged, Entity damager, double damage) {
         double health = damaged.getHealth();
-        health -= damage;
-        damaged.damage(0.1, damager);
-        if (health < 0) {
+        if (damage >= health) {
+            damaged.damage(0.01, damager);
             damaged.setHealth(0);
-        } else {
-            damaged.setHealth(health);
+            return;
+        }
+
+        damaged.damage(0.01, damager);
+        try {
+            damaged.setHealth(health - damage);
+        } catch (IllegalArgumentException exception) {
+            damaged.setHealth(0);
         }
     }
 }

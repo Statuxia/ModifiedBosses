@@ -2,12 +2,9 @@ package net.reworlds.modifiedbosses;
 
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.reworlds.modifiedbosses.boss.dragon.Dragon;
 import net.reworlds.modifiedbosses.charms.Charm;
 import net.reworlds.modifiedbosses.charms.CharmsEffects;
-import net.reworlds.modifiedbosses.commands.GetRunes;
-import net.reworlds.modifiedbosses.commands.GiveReward;
 import net.reworlds.modifiedbosses.utils.ComponentUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -30,8 +27,6 @@ public final class ModifiedBosses extends JavaPlugin {
         Dragon.setBattleWorld(Bukkit.getWorld("world_the_end"));
 
         getServer().getPluginManager().registerEvents(new Events(), this);
-        Bukkit.getPluginCommand("charms").setExecutor(new GetRunes()); // TODO: Delete
-        Bukkit.getPluginCommand("givereward").setExecutor(new GiveReward()); // TODO: Delete
 
         Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
             ImmutableList<Player> players = ImmutableList.copyOf(Bukkit.getOnlinePlayers());
@@ -90,33 +85,6 @@ public final class ModifiedBosses extends JavaPlugin {
                     });
                 }, index);
             }
-
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                player.getInventory().forEach(itemStack -> {
-                    if (itemStack != null && itemStack.lore() != null) {
-                        String lore = PlainTextComponentSerializer.plainText().serialize(itemStack.lore().get(0));
-                        int level = Charm.getLevel(lore);
-                        PotionEffectType type = Charm.getPotionEffectType(lore, level);
-                        if (level != -1 && type != null) {
-                            int duration = 110;
-                            if (type.getName().toLowerCase().contains("night_vision")) {
-                                duration *= 10;
-                            }
-                            player.addPotionEffect(new PotionEffect(type, duration, level - 1));
-                        }
-                    }
-                });
-
-                int range = 100;
-                if (getServer().getTPS()[0] > 13) {
-                    range = 200;
-                }
-                player.getNearbyEntities(range, range, range).forEach(entity -> {
-                    if (entity instanceof EnderDragon dragon && player.getGameMode() != GameMode.SPECTATOR) {
-                        Dragon.selectDragon(dragon);
-                    }
-                });
-            });
         }, 0, 100);
     }
 

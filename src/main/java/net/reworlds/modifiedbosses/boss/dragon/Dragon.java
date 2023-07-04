@@ -5,6 +5,11 @@ import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.reworlds.modifiedbosses.ModifiedBosses;
 import net.reworlds.modifiedbosses.charms.Charms;
+import net.reworlds.modifiedbosses.event.vekster.SuckingEvent;
+import net.reworlds.modifiedbosses.utils.Damage;
+import net.reworlds.modifiedbosses.utils.DateFormatter;
+import net.reworlds.modifiedbosses.utils.Recount;
+import net.reworlds.modifiedbosses.utils.TeamUtils;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -19,20 +24,24 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public class Dragon {
 
     @Getter
     private static final HashMap<Player, Integer> attackedBy = new HashMap<>();
+
+    private static final Set<Player> oldNearPlayer = new HashSet<>();
     @Getter
     private static final Set<Player> nearPlayers = new HashSet<>();
+    private static final Recount recount = new Recount("Ender Dragon");
     @Getter
     @Setter
     private static World battleWorld;
@@ -40,13 +49,13 @@ public class Dragon {
     private static EnderDragon dragon;
     @Getter
     private static boolean activated;
-    private static long startFightTime;
     @Getter
     private static int phase;
     private static BukkitTask dragonScheduler;
     private static Team dragonTeam;
     @Getter
     private static long lastAbility;
+    private static long startTime;
 
     public static boolean findDragon() {
         return findDragon(0);
@@ -115,13 +124,7 @@ public class Dragon {
             bossBar.setColor(BarColor.RED);
         }
 
-        Scoreboard mainScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-        try {
-            dragonTeam = mainScoreboard.registerNewTeam(ChatColor.DARK_PURPLE + "team");
-        } catch (IllegalArgumentException ignored) {
-            dragonTeam = mainScoreboard.getTeam(ChatColor.DARK_PURPLE + "team");
-        }
-        dragonTeam.setColor(ChatColor.DARK_PURPLE);
+        dragonTeam = TeamUtils.getTeam(ChatColor.DARK_PURPLE, "dragonTeam");
         dragonTeam.addEntity(dragon);
         dragon.setGlowing(true);
     }
@@ -136,12 +139,13 @@ public class Dragon {
                 nearPlayers.clear();
                 AtomicBoolean isCrystalsInRange = new AtomicBoolean(false);
                 dragon.getNearbyEntities(200, 200, 200).forEach(entity -> {
-                    if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR && !player.isDead()) {
-                        nearPlayers.add(player);
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 0));
-                        player.setGliding(false);
+                    if (entity instanceof Player player) {
+                        if (player.getGameMode() != GameMode.SPECTATOR && !player.isDead()) {
+                            nearPlayers.add(player);
+                            player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 0));
+                            player.setGliding(false);
+                        }
                     }
-
                     if (entity instanceof EnderCrystal crystal) {
                         if (dragonTeam != null) {
                             dragonTeam.addEntity(crystal);
@@ -150,11 +154,39 @@ public class Dragon {
                         isCrystalsInRange.set(true);
                     }
                 });
+                dragon.setInvulnerable(isCrystalsInRange.get());
+
                 if (!nearPlayers.isEmpty()) {
                     activateDragon();
                 }
 
-                dragon.setInvulnerable(isCrystalsInRange.get());
+                oldNearPlayer.forEach(player -> {
+                    if (!nearPlayers.contains(player) && player.getScoreboard().equals(recount.getBoard())) {
+                        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+                    }
+                });
+                recount.addAttackers(attackedBy);
+                nearPlayers.forEach(player -> {
+                    try {
+                        player.setScoreboard(recount.getBoard());
+                    } catch (Exception ignored) {
+                    }
+                });
+                oldNearPlayer.clear();
+                oldNearPlayer.addAll(nearPlayers);
+
+                Set<Player> toRemove = new HashSet<>();
+                attackedBy.forEach((player, damage) -> {
+                    if (!nearPlayers.contains(player) && Dragon.getDragon().getHealth() > 100) {
+                        toRemove.add(player);
+                    }
+                });
+
+                toRemove.forEach(player -> {
+                    Dragon.removeAttackedBy(player);
+                    Damage.damage(player, Dragon.getDragon(), 200);
+                });
+                toRemove.clear();
 
                 if (!dragon.isInvulnerable()) {
                     phase = 1;
@@ -190,6 +222,7 @@ public class Dragon {
         }
 
         activated = true;
+        startTime = System.currentTimeMillis();
         setDefaultSettings();
         activateScheduler();
     }
@@ -199,6 +232,10 @@ public class Dragon {
             return;
         }
         activated = false;
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+        }
 
         if (dragon != null && !dragon.isDead()) {
             setDefaultSettings();
@@ -215,19 +252,29 @@ public class Dragon {
     }
 
     private static void giveReward() {
-        Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(Component.text("§5Эндер Дракон повержен!")));
-        List<Player> top5 = getTop(10);
+        long endTime = System.currentTimeMillis();
+        String totalTime = DateFormatter.formatMillis(endTime - startTime);
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            player.sendMessage(Component.text("§5Эндер Дракон повержен!"));
+            player.sendMessage(Component.text("§7Затраченное время: " + totalTime));
+        });
+        List<Player> topList = Recount.getTop(10);
+        SuckingEvent suckEvent = new SuckingEvent(topList);
+        Bukkit.getPluginManager().callEvent(suckEvent);
         attackedBy.forEach((player, integer) -> {
             player.sendMessage(Component.text("§e===== §2TOP DAMAGE §e====="));
-            for (int i = 0; i < top5.size(); i++) {
+            for (int i = 0; i < topList.size(); i++) {
                 String color;
-                switch (i) {
-                    case 0 -> color = "§6§l";
-                    case 1, 2 -> color = "§a";
-                    default -> color = "§7";
+                String colorDamage;
+                Player top = topList.get(i);
+                if (player.equals(top)) {
+                    color = "§a";
+                    colorDamage = "§b";
+                } else {
+                    color = "§7";
+                    colorDamage = "§7";
                 }
-                Player top = top5.get(i);
-                player.sendMessage(Component.text("§e" + (i + 1) + ". " + color + top.getName() + " §b" + attackedBy.get(top)));
+                player.sendMessage(Component.text(color + (i + 1) + ". " + top.getName() + " " + colorDamage + attackedBy.get(top)));
             }
         });
         attackedBy.forEach((player, integer) -> {
@@ -236,13 +283,6 @@ public class Dragon {
                 giveReward(player);
             }
         });
-    }
-
-    private static List<Player> getTop(int limit) {
-        HashMap<Player, Integer> top = Dragon.getAttackedBy();
-        return top.entrySet().stream()
-                .sorted(Map.Entry.<Player, Integer>comparingByValue().reversed()).limit(limit).map(Map.Entry::getKey)
-                .collect(Collectors.toList());
     }
 
     public static void giveReward(Player player) {

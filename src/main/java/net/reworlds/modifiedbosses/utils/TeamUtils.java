@@ -23,6 +23,7 @@ public class TeamUtils {
             team = mainScoreboard.registerNewTeam(teamColor + tag);
             team.setAllowFriendlyFire(true);
             team.setCanSeeFriendlyInvisibles(false);
+            team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
         }
         team.setColor(teamColor);
         teams.put(teamColor, team);

@@ -64,7 +64,7 @@ public class Abilities {
         PotionEffect effect = new PotionEffect(PotionEffectType.DARKNESS, 200, 1);
         PotionEffect effect1 = new PotionEffect(PotionEffectType.BLINDNESS, 200, 1);
         Dragon.getNearPlayers().forEach(player -> {
-            player.sendMessage(Component.text("§eВаш взор застилает §0тьма..."));
+            player.sendMessage(Component.text("§eВаш взор застилает §8тьма..."));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
@@ -113,7 +113,7 @@ public class Abilities {
             locations.forEach(location -> {
                 location.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, location.clone().add(0, 1, 0), 1);
                 location.getNearbyEntities(6, 6, 6).forEach(entity -> {
-                    if (entity instanceof Player player) {
+                    if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR) {
                         Damage.damage(player, Dragon.getDragon(), 18);
                     }
                 });
@@ -140,7 +140,7 @@ public class Abilities {
                         Location dragonLocation = Dragon.getDragon().getLocation();
                         DragonFireball fireball = Dragon.getBattleWorld().spawn(dragonLocation, DragonFireball.class);
                         fireball.setDirection(player.getLocation().subtract(dragonLocation).toVector());
-                        fireball.setVelocity(fireball.getVelocity().multiply(2));
+                        fireball.setVelocity(fireball.getVelocity().multiply(4));
                         player.playSound(player, Sound.ENTITY_ENDER_DRAGON_SHOOT, 1, 1);
                     }
                 });
@@ -174,7 +174,7 @@ public class Abilities {
                 if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
                     Collection<LivingEntity> nearbyEntities = target.getLocation().getWorld()
                             .getNearbyLivingEntities(target.getLocation(), 3, 3, 3);
-                    nearbyEntities.removeIf(livingEntity -> !(livingEntity instanceof Player));
+                    nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player) || player.getGameMode() == GameMode.SPECTATOR));
                     int damage = 40 / nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
                         Damage.damage(entity, Dragon.getDragon(), damage);
@@ -212,7 +212,7 @@ public class Abilities {
                 if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
                     Collection<LivingEntity> nearbyEntities = target.getLocation().getWorld()
                             .getNearbyLivingEntities(target.getLocation(), 7, 7, 7);
-                    nearbyEntities.removeIf(livingEntity -> !(livingEntity instanceof Player));
+                    nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player) || player.getGameMode() == GameMode.SPECTATOR));
                     int damage = 10 * nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
                         if (entity instanceof Player) {
@@ -227,7 +227,7 @@ public class Abilities {
     }
 
     private static void plagueSurface() {
-        List<Player> targets = getTargets(4);
+        List<Player> targets = getTargets(8);
 
         Dragon.getNearPlayers().forEach(player -> {
             if (!targets.contains(player)) {
@@ -267,6 +267,9 @@ public class Abilities {
                 }
             });
             damageTo.forEach(player -> {
+                if (player.getGameMode() == GameMode.SPECTATOR) {
+                    return;
+                }
                 Damage.damage(player, Dragon.getDragon(), 200);
                 Particles.circle(player.getLocation().clone().add(0, 1, 0), Color.PURPLE, 2);
             });

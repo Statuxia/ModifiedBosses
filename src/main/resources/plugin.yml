@@ -2,9 +2,10 @@ name: ModifiedBosses
 version: '${project.version}'
 main: net.reworlds.modifiedbosses.ModifiedBosses
 api-version: '1.20'
+author: 'Statuxia'
 
-commands:
-  charms:
-    description: "get charms"
-  givereward:
-    description: "gives reward"
+#commands:
+#  charms:
+#    description: "get charms"
+#  givereward:
+#    description: "gives reward"
