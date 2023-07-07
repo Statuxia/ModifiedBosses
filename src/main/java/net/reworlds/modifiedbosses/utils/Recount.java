@@ -33,7 +33,7 @@ public class Recount {
     }
 
     private void generateScoreboard(String name) {
-        board = Bukkit.getScoreboardManager().getMainScoreboard();
+        board = Bukkit.getScoreboardManager().getNewScoreboard();
         objective = board.getObjective(name);
         if (objective == null) {
             objective = board.registerNewObjective(name, "dummy");

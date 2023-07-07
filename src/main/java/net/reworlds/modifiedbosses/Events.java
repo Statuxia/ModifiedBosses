@@ -7,10 +7,16 @@ import net.reworlds.modifiedbosses.utils.Damage;
 import net.reworlds.modifiedbosses.utils.Particles;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
@@ -66,8 +72,31 @@ public class Events implements Listener {
         if (Dragon.isSameWorld(player) && Abilities.removeEntityFromTeam(player)) {
             player.setGlowing(false);
         }
-        Dragon.removeAttackedBy(player);
     }
+
+//    @EventHandler
+//    public void onSendMessage(PlayerCommandSendEvent event) {
+//        Player player = event.getPlayer();
+//        String command = event.getCommands().stream().toList().get(0);
+//
+//        if (command.equals("milk") && Dragon.isSameWorld(player) && Dragon.isNearDragon(player) && Dragon.isActivated()) {
+////            Bukkit.getLogger().info("");
+//            PotionEffectType[] effects = new PotionEffectType[]{
+//                    PotionEffectType.BLINDNESS,
+//                    PotionEffectType.CONFUSION,
+//                    PotionEffectType.DARKNESS,
+//                    PotionEffectType.HUNGER,
+//                    PotionEffectType.POISON,
+//                    PotionEffectType.SLOW,
+//                    PotionEffectType.SLOW_DIGGING,
+//                    PotionEffectType.WEAKNESS,
+//                    PotionEffectType.WITHER
+//            };
+//            for (PotionEffectType effect : effects) {
+//                player.addPotionEffect(new PotionEffect(effect, 20 * 60, 0));
+//            }
+//        }
+//    }
 
     @EventHandler
     public void onTeleportToEnd(PlayerPortalEvent event) {

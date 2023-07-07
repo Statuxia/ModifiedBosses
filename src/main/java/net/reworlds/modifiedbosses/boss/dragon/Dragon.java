@@ -6,10 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.reworlds.modifiedbosses.ModifiedBosses;
 import net.reworlds.modifiedbosses.charms.Charms;
 import net.reworlds.modifiedbosses.event.vekster.SuckingEvent;
-import net.reworlds.modifiedbosses.utils.Damage;
-import net.reworlds.modifiedbosses.utils.DateFormatter;
-import net.reworlds.modifiedbosses.utils.Recount;
-import net.reworlds.modifiedbosses.utils.TeamUtils;
+import net.reworlds.modifiedbosses.utils.*;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -37,11 +34,8 @@ public class Dragon {
 
     @Getter
     private static final HashMap<Player, Integer> attackedBy = new HashMap<>();
-
-    private static final Set<Player> oldNearPlayer = new HashSet<>();
     @Getter
     private static final Set<Player> nearPlayers = new HashSet<>();
-    private static final Recount recount = new Recount("Ender Dragon");
     @Getter
     @Setter
     private static World battleWorld;
@@ -56,6 +50,14 @@ public class Dragon {
     @Getter
     private static long lastAbility;
     private static long startTime;
+    private static final List<Location> deadLocations = List.of(
+            new Location(battleWorld, 28, 66, 28),
+            new Location(battleWorld, 28, 66, -29),
+            new Location(battleWorld, -29, 66, -29),
+            new Location(battleWorld, -29, 66, 28)
+    );
+
+
 
     public static boolean findDragon() {
         return findDragon(0);
@@ -106,13 +108,15 @@ public class Dragon {
             return;
         }
         phase = 0;
-        dragon.setInvulnerable(true);
 
         AttributeInstance maxHealth = dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(2000f);
         }
-        dragon.setHealth(2000f);
+
+        if (!dragon.isDead()) {
+            dragon.setHealth(2000f);
+        }
 
         AttributeInstance attack = dragon.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (attack != null) {
@@ -124,7 +128,7 @@ public class Dragon {
             bossBar.setColor(BarColor.RED);
         }
 
-        dragonTeam = TeamUtils.getTeam(ChatColor.DARK_PURPLE, "dragonTeam");
+        dragonTeam = TeamUtils.getTeam(ChatColor.DARK_PURPLE, "DragonTeam");
         dragonTeam.addEntity(dragon);
         dragon.setGlowing(true);
     }
@@ -156,24 +160,42 @@ public class Dragon {
                 });
                 dragon.setInvulnerable(isCrystalsInRange.get());
 
+                AtomicBoolean isFighting = new AtomicBoolean(false);
+                attackedBy.forEach((player, integer) -> {
+                    if (isSameWorld(player) && isNearDragon(player)) {
+                        isFighting.set(true);
+                    }
+                });
+
+                if (!isFighting.get() && !dragon.isDead()) {
+                    dragon.setHealth(2000f);
+                    startTime = System.currentTimeMillis();
+                }
+
                 if (!nearPlayers.isEmpty()) {
                     activateDragon();
                 }
 
-                oldNearPlayer.forEach(player -> {
-                    if (!nearPlayers.contains(player) && player.getScoreboard().equals(recount.getBoard())) {
-                        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+                deadLocations.forEach(location -> {
+                    while (battleWorld.getHighestBlockYAt(location) > 65) {
+                        battleWorld.getHighestBlockAt(location).setType(Material.AIR);
                     }
                 });
-                recount.addAttackers(attackedBy);
-                nearPlayers.forEach(player -> {
-                    try {
-                        player.setScoreboard(recount.getBoard());
-                    } catch (Exception ignored) {
-                    }
-                });
-                oldNearPlayer.clear();
-                oldNearPlayer.addAll(nearPlayers);
+
+//                oldNearPlayer.forEach(player -> {
+//                    if (!nearPlayers.contains(player) && player.getScoreboard().equals(recount.getBoard())) {
+//                        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+//                    }
+//                });
+//                recount.addAttackers(attackedBy);
+//                nearPlayers.forEach(player -> {
+//                    try {
+//                        player.setScoreboard(recount.getBoard());
+//                    } catch (Exception ignored) {
+//                    }
+//                });
+//                oldNearPlayer.clear();
+//                oldNearPlayer.addAll(nearPlayers);
 
                 Set<Player> toRemove = new HashSet<>();
                 attackedBy.forEach((player, damage) -> {
@@ -234,7 +256,7 @@ public class Dragon {
         activated = false;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+            player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         }
 
         if (dragon != null && !dragon.isDead()) {
@@ -307,6 +329,7 @@ public class Dragon {
             }
             Component text = Component.text("§e" + player.getName() + " выбивает ").append(itemDisplayName);
             Bukkit.getOnlinePlayers().forEach(onlinePlayer -> onlinePlayer.sendMessage(text));
+            Bukkit.getLogger().info(ComponentUtils.plainText(text));
         }
     }
 

@@ -2,10 +2,12 @@ package net.reworlds.modifiedbosses.boss.dragon;
 
 import net.kyori.adventure.text.Component;
 import net.reworlds.modifiedbosses.ModifiedBosses;
+import net.reworlds.modifiedbosses.bossbars.Timer;
 import net.reworlds.modifiedbosses.utils.Damage;
 import net.reworlds.modifiedbosses.utils.Particles;
 import net.reworlds.modifiedbosses.utils.TeamUtils;
 import org.bukkit.*;
+import org.bukkit.boss.BarColor;
 import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -24,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Abilities {
 
     public static long activate() {
-        if (Dragon.getLastAbility() + (1000L * ThreadLocalRandom.current().nextInt(20, 30)) > System.currentTimeMillis()) {
+        if (Dragon.getLastAbility() + (1000L * ThreadLocalRandom.current().nextInt(18, 26)) > System.currentTimeMillis()) {
             return Dragon.getLastAbility();
         }
         if (Dragon.getDragon() == null || Dragon.getDragon().isDead() || Dragon.getPhase() == 0) {
@@ -149,11 +151,12 @@ public class Abilities {
     }
 
     private static void soulBomb() {
-        List<Player> targets = getTargets(6);
+        List<Player> targets = getTargets(8, false);
 
         targets.forEach(player -> {
             player.sendMessage("§eВас отметели §bбомбой души§e! §aПодойдите к другим игрокам, чтобы распределить урон!");
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
+            Timer.of(player, "soulBomb", 10, "§bБомба души", BarColor.RED);
             getSoulBombTeam().addEntity(player);
             player.setGlowing(true);
         });
@@ -175,7 +178,7 @@ public class Abilities {
                     Collection<LivingEntity> nearbyEntities = target.getLocation().getWorld()
                             .getNearbyLivingEntities(target.getLocation(), 3, 3, 3);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player) || player.getGameMode() == GameMode.SPECTATOR));
-                    int damage = 40 / nearbyEntities.size();
+                    int damage = 50 / nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
                         Damage.damage(entity, Dragon.getDragon(), damage);
                     });
@@ -187,11 +190,12 @@ public class Abilities {
     }
 
     private static void boilingBlood() {
-        List<Player> targets = getTargets(3);
+        List<Player> targets = getTargets(3, false);
 
         targets.forEach(player -> {
             player.sendMessage(Component.text("§eВас отметели §4кипящей кровью§e! §aОтбегите от других, чтобы избежать увеличения урона."));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
+            Timer.of(player, "boilingBlood", 10, "§4Кипящая кровь", BarColor.RED);
             getBoilingBloodTeam().addEntity(player);
             player.setGlowing(true);
         });
@@ -227,15 +231,17 @@ public class Abilities {
     }
 
     private static void plagueSurface() {
-        List<Player> targets = getTargets(8);
+        List<Player> targets = getTargets(8, true);
 
-        Dragon.getNearPlayers().forEach(player -> {
+        Dragon.getAttackedBy().forEach((player, damage) -> {
             if (!targets.contains(player)) {
                 player.sendMessage(Component.text("§eВы заразились §2Чумой порченой крови§e! §aНайдите союзников способных защитить от дебаффа!"));
+                Timer.of(player, "plagueSurface2", 10, "§2Чума порченой крови", BarColor.GREEN);
                 player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             } else {
                 player.sendMessage(Component.text("§eВы получили §2Метку иммунитета§e! §aЗащитите других игроков!"));
                 player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
+                Timer.of(player, "plagueSurface", 10, "§2Метка иммунитета", BarColor.GREEN);
                 getPlagueSurfaceTeam().addEntity(player);
                 player.setGlowing(true);
             }
@@ -276,8 +282,26 @@ public class Abilities {
         }, 200);
     }
 
-    private static List<Player> getTargets(int everyN) {
-        List<Player> players = new ArrayList<>(Dragon.getNearPlayers().stream().toList());
+//    private static List<Player> getTargets(int everyN) {
+//        List<Player> players = new ArrayList<>(Dragon.getNearPlayers().stream().toList());
+//        List<Player> targets = new ArrayList<>();
+//        int size = players.size();
+//        for (int i = 0; i < size / everyN + 1; i++) {
+//            Player temp = players.get(ThreadLocalRandom.current().nextInt(players.size()));
+//            players.remove(temp);
+//            targets.add(temp);
+//        }
+//        return targets;
+//    }
+
+    private static List<Player> getTargets(int everyN, boolean attackers) {
+        List<Player> players;
+
+        if (attackers) {
+            players = new ArrayList<>(Dragon.getAttackedBy().keySet());
+        } else {
+            players = new ArrayList<>(Dragon.getNearPlayers().stream().toList());
+        }
         List<Player> targets = new ArrayList<>();
         int size = players.size();
         for (int i = 0; i < size / everyN + 1; i++) {
@@ -289,15 +313,15 @@ public class Abilities {
     }
 
     public static Team getSoulBombTeam() {
-        return TeamUtils.getTeam(ChatColor.BLUE, "Dragon");
+        return TeamUtils.getTeam(ChatColor.BLUE, "SoulBombTeam");
     }
 
     public static Team getBoilingBloodTeam() {
-        return TeamUtils.getTeam(ChatColor.RED, "Dragon");
+        return TeamUtils.getTeam(ChatColor.RED, "BoilingBloodTeam");
     }
 
     public static Team getPlagueSurfaceTeam() {
-        return TeamUtils.getTeam(ChatColor.GREEN, "Dragon");
+        return TeamUtils.getTeam(ChatColor.GREEN, "PlagueSurfaceTeam");
     }
 
     public static boolean removeEntityFromTeam(Entity entity) {

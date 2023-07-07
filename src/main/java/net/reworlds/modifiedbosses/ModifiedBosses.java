@@ -5,6 +5,7 @@ import lombok.Getter;
 import net.reworlds.modifiedbosses.boss.dragon.Dragon;
 import net.reworlds.modifiedbosses.charms.Charm;
 import net.reworlds.modifiedbosses.charms.CharmsEffects;
+import net.reworlds.modifiedbosses.commands.RP;
 import net.reworlds.modifiedbosses.utils.ComponentUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -13,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.Objective;
 
 import java.util.List;
 
@@ -27,6 +29,7 @@ public final class ModifiedBosses extends JavaPlugin {
         Dragon.setBattleWorld(Bukkit.getWorld("world_the_end"));
 
         getServer().getPluginManager().registerEvents(new Events(), this);
+        Bukkit.getPluginCommand("rp").setExecutor(new RP());
 
         Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
             ImmutableList<Player> players = ImmutableList.copyOf(Bukkit.getOnlinePlayers());

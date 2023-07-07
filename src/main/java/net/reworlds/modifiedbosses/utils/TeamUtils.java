@@ -2,6 +2,7 @@ package net.reworlds.modifiedbosses.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
@@ -17,13 +18,13 @@ public class TeamUtils {
             return team;
         }
 
-        Scoreboard mainScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-        team = mainScoreboard.getTeam(teamColor + tag);
+        Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
+        team = scoreboard.getTeam(2 + tag);
         if (team == null) {
-            team = mainScoreboard.registerNewTeam(teamColor + tag);
+            team = scoreboard.registerNewTeam(2 + tag);
             team.setAllowFriendlyFire(true);
             team.setCanSeeFriendlyInvisibles(false);
-            team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
+//            team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
         }
         team.setColor(teamColor);
         teams.put(teamColor, team);
