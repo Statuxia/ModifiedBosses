@@ -309,8 +309,10 @@ public class Dragon {
 
     public static void giveReward(Player player) {
         player.giveExp(1080);
-        player.getInventory().addItem(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 8)));
-        if (ThreadLocalRandom.current().nextInt(100) < 31) {
+        if (ThreadLocalRandom.current().nextInt(100) < 51) {
+            player.getInventory().addItem(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
+        }
+        if (ThreadLocalRandom.current().nextInt(100) < 26) {
             ItemStack item;
             if (ThreadLocalRandom.current().nextInt(100) < 21) {
                 item = Charms.EPIC.get(ThreadLocalRandom.current().nextInt(Charms.EPIC.size())).getRune();

@@ -116,7 +116,7 @@ public class Abilities {
                 location.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, location.clone().add(0, 1, 0), 1);
                 location.getNearbyEntities(6, 6, 6).forEach(entity -> {
                     if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR) {
-                        Damage.damage(player, Dragon.getDragon(), 18);
+                        Damage.damage(player, Dragon.getDragon(), 25);
                     }
                 });
             });
@@ -190,7 +190,7 @@ public class Abilities {
     }
 
     private static void boilingBlood() {
-        List<Player> targets = getTargets(3, false);
+        List<Player> targets = getTargets(1, false);
 
         targets.forEach(player -> {
             player.sendMessage(Component.text("§eВас отметели §4кипящей кровью§e! §aОтбегите от других, чтобы избежать увеличения урона."));
@@ -204,7 +204,7 @@ public class Abilities {
             for (Player target : targets) {
                 if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
                     Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-                        Particles.circle(target.getLocation(), Particle.FALLING_LAVA, 7);
+                        Particles.circle(target.getLocation(), Particle.FALLING_LAVA, 14);
                         target.playSound(target, Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
                     }, 5 * i);
                 }
@@ -215,7 +215,7 @@ public class Abilities {
             targets.forEach(target -> {
                 if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
                     Collection<LivingEntity> nearbyEntities = target.getLocation().getWorld()
-                            .getNearbyLivingEntities(target.getLocation(), 7, 7, 7);
+                            .getNearbyLivingEntities(target.getLocation(), 14, 14, 14);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player) || player.getGameMode() == GameMode.SPECTATOR));
                     int damage = 10 * nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
@@ -301,6 +301,9 @@ public class Abilities {
             players = new ArrayList<>(Dragon.getAttackedBy().keySet());
         } else {
             players = new ArrayList<>(Dragon.getNearPlayers().stream().toList());
+        }
+        if (everyN == 1) {
+            return players;
         }
         List<Player> targets = new ArrayList<>();
         int size = players.size();

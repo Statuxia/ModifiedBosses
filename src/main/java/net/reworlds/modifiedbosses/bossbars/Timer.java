@@ -68,13 +68,6 @@ public class Timer {
 
 
     public static Timer of(Player player, String id, int seconds, String title, BarColor color) {
-        Optional<Timer> has = get(id);
-        if (has.isEmpty()) {
-            return new Timer(player, id, seconds, title, color);
-        }
-        Timer timer = has.get();
-        timer.bar.setVisible(true);
-        timer.bar.addPlayer(player);
-        return timer;
+        return new Timer(player, id, seconds, title, color);
     }
 }
