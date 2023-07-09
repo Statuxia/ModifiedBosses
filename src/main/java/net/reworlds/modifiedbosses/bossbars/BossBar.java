@@ -1,9 +1,6 @@
 package net.reworlds.modifiedbosses.bossbars;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
 import net.reworlds.modifiedbosses.ModifiedBosses;
-import net.reworlds.modifiedbosses.utils.PacketUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;

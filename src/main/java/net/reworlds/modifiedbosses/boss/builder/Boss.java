@@ -44,6 +44,7 @@ public abstract class Boss implements Listener {
     private double minimumDamageToReward = 50D;
     private BukkitTask task;
     private long startTime;
+    private boolean battleStarted;
 
     public Boss(LivingEntity boss) {
         this.boss = boss;
@@ -199,11 +200,25 @@ public abstract class Boss implements Listener {
 
 
     public void startBattle() {
+        battleStarted = true;
         startTime = System.currentTimeMillis();
     }
 
     public void stopBattle() {
+        if (!battleStarted) {
+            return;
+        }
 
+        if (boss.isDead()) {
+            bossDeadMessage();
+            reward();
+            // Не, типа я могу писать метод и НЕ ДЕЛАТЬ НИЧЕ С НИМ
+            // УИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИИ
+            // это моя реакция на эту штуку
+
+            // ебать абстракции крутая тема
+
+        }
     }
 
     public void remove() {
@@ -215,16 +230,24 @@ public abstract class Boss implements Listener {
         if (task == null || task.isCancelled()) {
             Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
                 damageByPlayers.forEach((player, damage) -> {
-                    if (player.getGameMode() == GameMode.SPECTATOR || !isNear(player)) {
+                    if ((player.getGameMode() == GameMode.SPECTATOR || !isNear(player)) && !boss.isDead()) {
                         damageByPlayers.remove(player);
                         damagePlayer(player, 200);
                     }
                 });
+                if (damageByPlayers.isEmpty()) {
+                    stopBattle();
+                } else {
+                    startBattle();
+                }
             }, 20, 20);
         }
     }
 
     public void bossDeadMessage() {
+        // TODO: переделать
+
+        // я чуток наврал. я изменю кое что в механике босса
         long endTime = System.currentTimeMillis();
         String totalTime = DateFormatter.formatMillis(endTime - startTime);
         TextComponent text = Component.text("§b" + bar.getTitle() + " повержен!");
@@ -253,6 +276,9 @@ public abstract class Boss implements Listener {
             }
         });
     }
+
+    public abstract void reward();
+    public abstract void
 
     public List<Player> getTop(int limit) {
         Map<Player, Double> top = damageByPlayers;
