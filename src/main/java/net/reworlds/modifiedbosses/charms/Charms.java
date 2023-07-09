@@ -1,5 +1,14 @@
 package net.reworlds.modifiedbosses.charms;
 
+import com.google.common.collect.ImmutableList;
+import net.reworlds.modifiedbosses.ModifiedBosses;
+import net.reworlds.modifiedbosses.utils.ComponentUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
+
 import java.util.List;
 
 import static org.bukkit.potion.PotionEffectType.*;
@@ -52,4 +61,52 @@ public class Charms {
             INCREASE_DAMAGE_EPIC,
             SATURATION_EPIC
     );
+
+    public static void activate() {
+        if (ModifiedBosses.getTask() != null) {
+            return;
+        }
+
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
+            ImmutableList<Player> players = ImmutableList.copyOf(Bukkit.getOnlinePlayers());
+            int groupSize = players.size() / 20;
+
+            for (int index = 0; index < 20; index++) {
+                int startIndex = index * groupSize;
+                int endIndex = (index + 1) * groupSize;
+
+                if (index == 19) {
+                    endIndex = players.size();
+                }
+
+                List<Player> group = players.subList(startIndex, endIndex);
+
+                Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
+                    group.forEach(player -> {
+                        player.getInventory().forEach(itemStack -> {
+                            if (itemStack == null || itemStack.lore() == null) {
+                                return;
+                            }
+                            String lore = ComponentUtils.plainText(itemStack.lore().get(0));
+                            int level = Charm.getLevel(lore);
+                            PotionEffectType type = Charm.getPotionEffectType(lore, level);
+                            if (level == -1 || type == null) {
+                                return;
+                            }
+                            String typeText = type.getName().toLowerCase();
+                            String key = typeText + level;
+                            PotionEffect effect = CharmsEffects.getEffects().get(key);
+                            if (effect == null) {
+                                int duration = typeText.contains("night_vision") ? 1100 : 110;
+                                effect = new PotionEffect(type, duration, level - 1);
+                                CharmsEffects.getEffects().put(key, effect);
+                            }
+                            player.addPotionEffect(effect);
+                        });
+                    });
+                }, index);
+            }
+        }, 0, 100);
+        ModifiedBosses.setTask(task);
+    }
 }

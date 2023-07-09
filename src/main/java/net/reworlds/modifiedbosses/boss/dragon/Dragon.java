@@ -11,6 +11,7 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.entity.EnderCrystal;
@@ -39,8 +40,16 @@ public class Dragon {
     @Getter
     @Setter
     private static World battleWorld;
+    private static final List<Location> deadLocations = List.of(
+            new Location(battleWorld, 28, 66, 28),
+            new Location(battleWorld, 28, 66, -29),
+            new Location(battleWorld, -29, 66, -29),
+            new Location(battleWorld, -29, 66, 28)
+    );
     @Getter
     private static EnderDragon dragon;
+    @Getter
+    private static BossBar bossbar;
     @Getter
     private static boolean activated;
     @Getter
@@ -50,14 +59,6 @@ public class Dragon {
     @Getter
     private static long lastAbility;
     private static long startTime;
-    private static final List<Location> deadLocations = List.of(
-            new Location(battleWorld, 28, 66, 28),
-            new Location(battleWorld, 28, 66, -29),
-            new Location(battleWorld, -29, 66, -29),
-            new Location(battleWorld, -29, 66, 28)
-    );
-
-
 
     public static boolean findDragon() {
         return findDragon(0);
@@ -118,14 +119,12 @@ public class Dragon {
             dragon.setHealth(2000f);
         }
 
+        dragon.getBossBar().setStyle(BarStyle.SEGMENTED_10);
+        dragon.getBossBar().setColor(BarColor.RED);
+
         AttributeInstance attack = dragon.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (attack != null) {
             attack.setBaseValue(20);
-        }
-
-        BossBar bossBar = dragon.getBossBar();
-        if (bossBar != null) {
-            bossBar.setColor(BarColor.RED);
         }
 
         dragonTeam = TeamUtils.getTeam(ChatColor.DARK_PURPLE, "DragonTeam");
@@ -135,6 +134,9 @@ public class Dragon {
 
     private static void activateScheduler() {
         if (dragonScheduler == null || dragonScheduler.isCancelled()) {
+            if (1 != 2) {
+                return;
+            }
             dragonScheduler = Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
                 if (dragon == null || dragon.isDead()) {
                     stopBattle();
@@ -234,6 +236,9 @@ public class Dragon {
     }
 
     public static void activateDragon() {
+        if (1 != 2) {
+            return;
+        }
         if (activated) {
             return;
         }
@@ -271,6 +276,7 @@ public class Dragon {
         nearPlayers.clear();
         deactivateScheduler();
         phase = 0;
+        bossbar = null;
     }
 
     private static void giveReward() {

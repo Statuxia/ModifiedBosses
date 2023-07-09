@@ -35,7 +35,7 @@ public class Abilities {
         int ability = ThreadLocalRandom.current().nextInt(Dragon.getPhase() == 2 ? 7 : 4);
         switch (ability) {
             case 0 -> dragonRoar();
-            case 1 -> voidView();
+            case 1 -> mindLock();
             case 2 -> cosmicRay();
             case 3 -> shadowOfDeath();
             case 4 -> soulBomb();
@@ -62,18 +62,36 @@ public class Abilities {
         }, 20 * 3);
     }
 
-    private static void voidView() {
-        PotionEffect effect = new PotionEffect(PotionEffectType.DARKNESS, 200, 1);
-        PotionEffect effect1 = new PotionEffect(PotionEffectType.BLINDNESS, 200, 1);
+    private static void mindLock() {
+        PotionEffectType[] effectsType = new PotionEffectType[]{
+                PotionEffectType.BLINDNESS,
+                PotionEffectType.CONFUSION,
+                PotionEffectType.DARKNESS,
+                PotionEffectType.HUNGER,
+                PotionEffectType.POISON,
+                PotionEffectType.SLOW,
+                PotionEffectType.SLOW_DIGGING,
+                PotionEffectType.WEAKNESS,
+                PotionEffectType.WITHER
+        };
+        PotionEffect[] effects = new PotionEffect[effectsType.length];
+        for (int i = 0; i < effectsType.length; i++) {
+            effects[i] = new PotionEffect(effectsType[i], 200, 0);
+        }
+//        PotionEffect effect = new PotionEffect(PotionEffectType.DARKNESS, 200, 1);
+//        PotionEffect effect1 = new PotionEffect(PotionEffectType.BLINDNESS, 200, 1);
         Dragon.getNearPlayers().forEach(player -> {
-            player.sendMessage(Component.text("§eВаш взор застилает §8тьма..."));
+            player.sendMessage(Component.text("§eВы постепенно ощущаете, §8что теряете рассудок......"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
             Dragon.getNearPlayers().forEach(player -> {
-                player.addPotionEffect(effect);
-                player.addPotionEffect(effect1);
-                player.playSound(player, Sound.ENTITY_GHAST_WARN, 0.5f, 1);
+                for (PotionEffect effect : effects) {
+                    player.addPotionEffect(effect);
+                }
+//                player.addPotionEffect(effect);
+//                player.addPotionEffect(effect1);
+                player.playSound(player, Sound.ENTITY_DROWNED_AMBIENT, 1f, 1);
             });
 
 
