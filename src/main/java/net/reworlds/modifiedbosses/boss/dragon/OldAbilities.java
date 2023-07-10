@@ -23,16 +23,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class Abilities {
+public class OldAbilities {
 
     public static long activate() {
-        if (Dragon.getLastAbility() + (1000L * ThreadLocalRandom.current().nextInt(18, 26)) > System.currentTimeMillis()) {
-            return Dragon.getLastAbility();
+        if (OldDragon.getLastAbility() + (1000L * ThreadLocalRandom.current().nextInt(18, 26)) > System.currentTimeMillis()) {
+            return OldDragon.getLastAbility();
         }
-        if (Dragon.getDragon() == null || Dragon.getDragon().isDead() || Dragon.getPhase() == 0) {
-            return Dragon.getLastAbility();
+        if (OldDragon.getDragon() == null || OldDragon.getDragon().isDead() || OldDragon.getPhase() == 0) {
+            return OldDragon.getLastAbility();
         }
-        int ability = ThreadLocalRandom.current().nextInt(Dragon.getPhase() == 2 ? 7 : 4);
+        int ability = ThreadLocalRandom.current().nextInt(OldDragon.getPhase() == 2 ? 7 : 4);
         switch (ability) {
             case 0 -> dragonRoar();
             case 1 -> mindLock();
@@ -46,14 +46,14 @@ public class Abilities {
     }
 
     private static void dragonRoar() {
-        Dragon.getNearPlayers().forEach(player -> {
+        OldDragon.getNearPlayers().forEach(player -> {
             player.sendMessage(Component.text("§eВы чувствуете, что земля начинает трястись под вашими ногами."));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
 
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-            Dragon.getNearPlayers().forEach(player -> {
-                if (Dragon.isSameWorld(player) && Dragon.isNearDragon(player)) {
+            OldDragon.getNearPlayers().forEach(player -> {
+                if (OldDragon.isSameWorld(player) && OldDragon.isNearDragon(player)) {
                     player.setVelocity(new Vector(0, 2, 0));
                     player.playSound(player, Sound.ENTITY_ENDER_DRAGON_AMBIENT, 1, 1);
                     player.playSound(player, Sound.BLOCK_POWDER_SNOW_HIT, 0.5f, 1);
@@ -80,12 +80,12 @@ public class Abilities {
         }
 //        PotionEffect effect = new PotionEffect(PotionEffectType.DARKNESS, 200, 1);
 //        PotionEffect effect1 = new PotionEffect(PotionEffectType.BLINDNESS, 200, 1);
-        Dragon.getNearPlayers().forEach(player -> {
+        OldDragon.getNearPlayers().forEach(player -> {
             player.sendMessage(Component.text("§eВы постепенно ощущаете, §8что теряете рассудок......"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-            Dragon.getNearPlayers().forEach(player -> {
+            OldDragon.getNearPlayers().forEach(player -> {
                 for (PotionEffect effect : effects) {
                     player.addPotionEffect(effect);
                 }
@@ -102,7 +102,7 @@ public class Abilities {
         List<Location> locations = new ArrayList<>();
         List<Player> players = new ArrayList<>();
 
-        Dragon.getNearPlayers().forEach(player -> {
+        OldDragon.getNearPlayers().forEach(player -> {
             player.sendMessage(Component.text("§eДракон нацелен на вас! §cБегите!"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             players.add(player);
@@ -112,13 +112,13 @@ public class Abilities {
             int finalI = i;
             Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
                 players.forEach(player -> {
-                    if (Dragon.isSameWorld(player) && Dragon.isNearDragon(player)) {
+                    if (OldDragon.isSameWorld(player) && OldDragon.isNearDragon(player)) {
                         Location location = player.getLocation();
-                        Particles.particleLine(Dragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(0.5, 0, 0.5), Color.RED);
-                        Particles.particleLine(Dragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(-0.5, 0, -0.5), Color.RED);
-                        Particles.particleLine(Dragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(-0.5, 0, 0.5), Color.RED);
-                        Particles.particleLine(Dragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(0.5, 0, -0.5), Color.RED);
-                        Particles.particleLine(Dragon.getDragon().getLocation(), location, Color.PURPLE);
+                        Particles.particleLine(OldDragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(0.5, 0, 0.5), Color.RED);
+                        Particles.particleLine(OldDragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(-0.5, 0, -0.5), Color.RED);
+                        Particles.particleLine(OldDragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(-0.5, 0, 0.5), Color.RED);
+                        Particles.particleLine(OldDragon.getDragon().getLocation().clone().add(0.5, -0.5, 0.5), location.clone().add(0.5, 0, -0.5), Color.RED);
+                        Particles.particleLine(OldDragon.getDragon().getLocation(), location, Color.PURPLE);
                         Particles.circle(location.clone(), Color.PURPLE, 6);
                         player.playSound(player, Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
                         if (finalI == 8) {
@@ -134,11 +134,11 @@ public class Abilities {
                 location.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, location.clone().add(0, 1, 0), 1);
                 location.getNearbyEntities(6, 6, 6).forEach(entity -> {
                     if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR) {
-                        Damage.damage(player, Dragon.getDragon(), 25);
+                        Damage.damage(player, OldDragon.getDragon(), 25);
                     }
                 });
             });
-            Dragon.getNearPlayers().forEach(player -> {
+            OldDragon.getNearPlayers().forEach(player -> {
                 player.playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
             });
         }, 105);
@@ -147,7 +147,7 @@ public class Abilities {
     private static void shadowOfDeath() {
         List<Player> players = new ArrayList<>();
 
-        Dragon.getNearPlayers().forEach(player -> {
+        OldDragon.getNearPlayers().forEach(player -> {
             player.sendMessage(Component.text("§eДракон атакует §5дыханием смерти§e! §cБегите!"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             players.add(player);
@@ -156,9 +156,9 @@ public class Abilities {
         for (int i = 0; i < 10; i++) {
             Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
                 players.forEach(player -> {
-                    if (Dragon.isSameWorld(player) && Dragon.isNearDragon(player)) {
-                        Location dragonLocation = Dragon.getDragon().getLocation();
-                        DragonFireball fireball = Dragon.getBattleWorld().spawn(dragonLocation, DragonFireball.class);
+                    if (OldDragon.isSameWorld(player) && OldDragon.isNearDragon(player)) {
+                        Location dragonLocation = OldDragon.getDragon().getLocation();
+                        DragonFireball fireball = OldDragon.getBattleWorld().spawn(dragonLocation, DragonFireball.class);
                         fireball.setDirection(player.getLocation().subtract(dragonLocation).toVector());
                         fireball.setVelocity(fireball.getVelocity().multiply(4));
                         player.playSound(player, Sound.ENTITY_ENDER_DRAGON_SHOOT, 1, 1);
@@ -181,7 +181,7 @@ public class Abilities {
 
         for (int i = 0; i < 40; i++) {
             for (Player target : targets) {
-                if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
+                if (target.getWorld().equals(OldDragon.getBattleWorld()) && target.getLocation().distance(OldDragon.getDragon().getLocation()) < 300) {
                     Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
                         Particles.circle(target.getLocation(), Particle.FALLING_WATER, 3);
                         target.playSound(target, Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
@@ -192,13 +192,13 @@ public class Abilities {
 
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
             targets.forEach(target -> {
-                if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
+                if (target.getWorld().equals(OldDragon.getBattleWorld()) && target.getLocation().distance(OldDragon.getDragon().getLocation()) < 300) {
                     Collection<LivingEntity> nearbyEntities = target.getLocation().getWorld()
                             .getNearbyLivingEntities(target.getLocation(), 3, 3, 3);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player) || player.getGameMode() == GameMode.SPECTATOR));
                     int damage = 50 / nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
-                        Damage.damage(entity, Dragon.getDragon(), damage);
+                        Damage.damage(entity, OldDragon.getDragon(), damage);
                     });
                     target.setGlowing(false);
                     getSoulBombTeam().removeEntity(target);
@@ -220,7 +220,7 @@ public class Abilities {
 
         for (int i = 0; i < 40; i++) {
             for (Player target : targets) {
-                if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
+                if (target.getWorld().equals(OldDragon.getBattleWorld()) && target.getLocation().distance(OldDragon.getDragon().getLocation()) < 300) {
                     Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
                         Particles.circle(target.getLocation(), Particle.FALLING_LAVA, 14);
                         target.playSound(target, Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
@@ -231,14 +231,14 @@ public class Abilities {
 
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
             targets.forEach(target -> {
-                if (target.getWorld().equals(Dragon.getBattleWorld()) && target.getLocation().distance(Dragon.getDragon().getLocation()) < 300) {
+                if (target.getWorld().equals(OldDragon.getBattleWorld()) && target.getLocation().distance(OldDragon.getDragon().getLocation()) < 300) {
                     Collection<LivingEntity> nearbyEntities = target.getLocation().getWorld()
                             .getNearbyLivingEntities(target.getLocation(), 14, 14, 14);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player) || player.getGameMode() == GameMode.SPECTATOR));
                     int damage = 10 * nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
                         if (entity instanceof Player) {
-                            Damage.damage(entity, Dragon.getDragon(), damage);
+                            Damage.damage(entity, OldDragon.getDragon(), damage);
                         }
                     });
                     target.setGlowing(false);
@@ -251,7 +251,7 @@ public class Abilities {
     private static void plagueSurface() {
         List<Player> targets = getTargets(8, true);
 
-        Dragon.getAttackedBy().forEach((player, damage) -> {
+        OldDragon.getAttackedBy().forEach((player, damage) -> {
             if (!targets.contains(player)) {
                 player.sendMessage(Component.text("§eВы заразились §2Чумой порченой крови§e! §aНайдите союзников способных защитить от дебаффа!"));
                 Timer.of(player, "plagueSurface2", 10, "§2Чума порченой крови", BarColor.GREEN);
@@ -275,11 +275,11 @@ public class Abilities {
         }
 
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-            Set<Player> damageTo = Dragon.getNearPlayers();
+            Set<Player> damageTo = OldDragon.getNearPlayers();
             targets.forEach(damageTo::remove);
             targets.forEach(target -> {
-                if (Dragon.isSameWorld(target) && Dragon.isNearDragon(target)) {
-                    Collection<LivingEntity> nearbyEntities = Dragon.getBattleWorld()
+                if (OldDragon.isSameWorld(target) && OldDragon.isNearDragon(target)) {
+                    Collection<LivingEntity> nearbyEntities = OldDragon.getBattleWorld()
                             .getNearbyLivingEntities(target.getLocation(), 2, 2, 2);
                     nearbyEntities.forEach(livingEntity -> {
                         if (livingEntity instanceof Player player) {
@@ -294,7 +294,7 @@ public class Abilities {
                 if (player.getGameMode() == GameMode.SPECTATOR) {
                     return;
                 }
-                Damage.damage(player, Dragon.getDragon(), 200);
+                Damage.damage(player, OldDragon.getDragon(), 200);
                 Particles.circle(player.getLocation().clone().add(0, 1, 0), Color.PURPLE, 2);
             });
         }, 200);
@@ -316,9 +316,9 @@ public class Abilities {
         List<Player> players;
 
         if (attackers) {
-            players = new ArrayList<>(Dragon.getAttackedBy().keySet());
+            players = new ArrayList<>(OldDragon.getAttackedBy().keySet());
         } else {
-            players = new ArrayList<>(Dragon.getNearPlayers().stream().toList());
+            players = new ArrayList<>(OldDragon.getNearPlayers().stream().toList());
         }
         if (everyN == 1) {
             return players;

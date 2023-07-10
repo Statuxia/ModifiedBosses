@@ -1,14 +1,8 @@
 package net.reworlds.modifiedbosses.utils;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.google.common.collect.Lists;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
-import net.reworlds.modifiedbosses.boss.dragon.Dragon;
+import net.reworlds.modifiedbosses.boss.dragon.OldDragon;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -32,7 +26,7 @@ public class Recount {
     }
 
     public static List<Player> getTop(int limit) {
-        HashMap<Player, Integer> top = Dragon.getAttackedBy();
+        HashMap<Player, Integer> top = OldDragon.getAttackedBy();
         return top.entrySet().stream()
                 .sorted(Map.Entry.<Player, Integer>comparingByValue().reversed()).limit(limit).map(Map.Entry::getKey)
                 .collect(Collectors.toList());
