@@ -17,7 +17,7 @@ public class Charm {
 
     private final int level;
     @Getter
-    private ItemStack rune;
+    private ItemStack charm;
     private String rawName;
     private String name;
 
@@ -92,8 +92,8 @@ public class Charm {
     }
 
     private void makeItem() {
-        rune = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE, 1);
-        rune.addItemFlags(ItemFlag.values());
+        charm = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE, 1);
+        charm.addItemFlags(ItemFlag.values());
     }
 
     private void addName(PotionEffectType type) {
@@ -111,15 +111,15 @@ public class Charm {
         }
 
         name += "Талисман " + rawName;
-        ItemMeta meta = rune.getItemMeta();
+        ItemMeta meta = charm.getItemMeta();
         meta.displayName(Component.text(name));
-        rune.setItemMeta(meta);
+        charm.setItemMeta(meta);
     }
 
     private void addLore() {
         List<Component> components = new ArrayList<>();
         components.add(Component.text("§fДает эффект " + rawName + " " + (level + 1) + " при ношении в инвентаре"));
-        rune.lore(components);
+        charm.lore(components);
     }
 
     private String getName(PotionEffectType type) {

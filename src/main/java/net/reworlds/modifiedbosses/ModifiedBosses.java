@@ -2,23 +2,20 @@ package net.reworlds.modifiedbosses;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.reworlds.modifiedbosses.boss.Boss;
-import net.reworlds.modifiedbosses.boss.dragon.Dragon;
 import net.reworlds.modifiedbosses.charms.Charms;
-import net.reworlds.modifiedbosses.commands.ResourcePack;
+import net.reworlds.modifiedbosses.commands.BestiaryCommand;
+import net.reworlds.modifiedbosses.commands.RPCommand;
+import net.reworlds.modifiedbosses.commands.boss.dragon.BestiaryDragonCommand;
+import net.reworlds.modifiedbosses.commands.boss.dragon.BestiaryDragonDropCommand;
+import net.reworlds.modifiedbosses.respawn.Bosses;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public final class ModifiedBosses extends JavaPlugin {
 
     @Getter
     private static ModifiedBosses INSTANCE;
-    private static final Map<UUID, Boss> BOSSES = new HashMap<>();
     @Getter
     @Setter
     private static BukkitTask task;
@@ -27,20 +24,40 @@ public final class ModifiedBosses extends JavaPlugin {
     public void onEnable() {
         INSTANCE = this;
 
-//        Dragon.setBattleWorld(Bukkit.getWorld("world_the_end"));
         // BOSSES
+        Bosses.initializeDragon();
 
         // Charms
         Charms.activate();
 
-        getServer().getPluginManager().registerEvents(new Events(), this);
-        Bukkit.getPluginCommand("rp").setExecutor(new ResourcePack());
+        // Commands
+        Bukkit.getPluginCommand("rp").setExecutor(new RPCommand());
+        Bukkit.getPluginCommand("bestiary").setExecutor(new BestiaryCommand());
+        Bukkit.getPluginCommand("bDragon").setExecutor(new BestiaryDragonCommand());
+        Bukkit.getPluginCommand("bDragonDrop").setExecutor(new BestiaryDragonDropCommand());
+        Bukkit.getPluginManager().registerEvents(new Events(), this);
     }
 
     @Override
     public void onDisable() {
-        BOSSES.forEach((uuid, boss) -> {
-            boss.remove();
+        Bosses.getBosses().forEach((uuid, boss) -> {
+            try {
+                boss.getDummy().remove();
+            } catch (Exception ignored) {
+            }
+            try {
+                boss.getRespawnTimer().stop();
+            } catch (Exception ignored) {
+            }
+            try {
+                boss.getBoss().removeBoss();
+            } catch (Exception ignored) {
+            }
+            Bukkit.getOnlinePlayers().forEach(player -> {
+                if (player.getOpenInventory().getOriginalTitle().equals("§0Дроп")) {
+                    player.closeInventory();
+                }
+            });
         });
     }
 }
