@@ -12,13 +12,11 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
-import org.bukkit.entity.EnderCrystal;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EnderDragonChangePhaseEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -78,7 +76,7 @@ public class Dragon extends Boss {
     }
 
     public void removeBoss() {
-        damageByPlayers.forEach((player, damage) -> {
+        getDamagers().forEach(player -> {
             if (DragonAbilities.removeEntityFromTeam(player)) {
                 TeamUtils.returnTeamBefore(player);
             }
@@ -91,7 +89,7 @@ public class Dragon extends Boss {
     @Override
     public void remove() {
         super.stopBattle();
-        damageByPlayers.forEach((player, damage) -> {
+        getDamagers().forEach(player -> {
             if (DragonAbilities.removeEntityFromTeam(player)) {
                 TeamUtils.returnTeamBefore(player);
             }
@@ -112,12 +110,13 @@ public class Dragon extends Boss {
 
     private void specialReward(Player player) {
         player.giveExp(1080);
-        if (ThreadLocalRandom.current().nextInt(100) < 51) {
+        Bukkit.getLogger().info("" + player.getName());
+        if (ThreadLocalRandom.current().nextInt(100) < 50) {
             giveOrDrop(player, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
         }
         if (ThreadLocalRandom.current().nextInt(100) < 30) {
             ItemStack item;
-            if (ThreadLocalRandom.current().nextInt(100) < 21) {
+            if (ThreadLocalRandom.current().nextInt(100) < 20) {
                 item = Charms.EPIC.get(ThreadLocalRandom.current().nextInt(Charms.EPIC.size())).getCharm();
             } else {
                 item = Charms.RARE.get(ThreadLocalRandom.current().nextInt(Charms.RARE.size())).getCharm();
@@ -142,7 +141,7 @@ public class Dragon extends Boss {
         } catch (Exception ignored) {
         }
 
-        damageByPlayers.forEach((player, damage) -> {
+        getDamagers().forEach(player -> {
             player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 0));
             player.setGliding(false);
         });
@@ -154,7 +153,7 @@ public class Dragon extends Boss {
         });
 
         AtomicBoolean isCrystalsInRange = new AtomicBoolean(false);
-        boss.getNearbyEntities(200, 200, 200).forEach(entity -> {
+        boss.getNearbyEntities(radius, radius, radius).forEach(entity -> {
             if (entity instanceof EnderCrystal crystal) {
                 if (bossTeam != null) {
                     bossTeam.addEntity(crystal);
@@ -225,7 +224,7 @@ public class Dragon extends Boss {
             TeamUtils.returnTeamBefore(player);
         }
         if (boss.getHealth() > 200) {
-            damageByPlayers.remove(player);
+            removeDamager(player);
         }
     }
 

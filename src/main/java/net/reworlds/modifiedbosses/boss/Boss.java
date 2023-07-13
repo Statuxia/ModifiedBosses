@@ -43,7 +43,6 @@ public abstract class Boss implements Listener {
     protected final String bossName;
     @Getter
     protected final LivingEntity boss;
-    @Getter
     protected final Map<Player, Double> damageByPlayers = new HashMap<>();
     protected BukkitTask task;
     protected long startTime;
@@ -109,7 +108,7 @@ public abstract class Boss implements Listener {
         if (!(damaged instanceof Player player)) {
             return;
         }
-        if (!damageByPlayers.containsKey(player)) {
+        if (!getDamagers().contains(player)) {
             return;
         }
 
@@ -117,8 +116,8 @@ public abstract class Boss implements Listener {
         if (damage >= health) {
             damaged.damage(0.01, boss);
             damaged.setHealth(0);
-            if (boss.getHealth() > 200) {
-                damageByPlayers.remove(damaged);
+            if (boss.getHealth() > boss.getMaxHealth() * 0.1) {
+                removeDamager(player);
             }
             return;
         }
@@ -128,23 +127,39 @@ public abstract class Boss implements Listener {
             damaged.setHealth(health - damage);
         } catch (IllegalArgumentException exception) {
             damaged.setHealth(0);
-            if (boss.getHealth() > 200) {
-                damageByPlayers.remove(damaged);
+            if (boss.getHealth() > boss.getMaxHealth() * 0.1) {
+                removeDamager(player);
             }
         }
     }
 
     protected void addDamage(@NotNull Player player, double damage) {
-        if (!damageByPlayers.containsKey(player)) {
+        if (!getDamagers().contains(player)) {
             player.sendMessage("§eВы вступили в бой с боссом " + bossName + "§e!§r");
             player.sendMessage("§cВ случае побега с поля битвы вы будете убиты!§r");
         }
-        damageByPlayers.put(player, damageByPlayers.getOrDefault(player, 0D) + damage);
+        putDamager(player, damage);
     }
 
     /*
      * Utils Part
      */
+
+    public void removeDamager(Player player) {
+        damageByPlayers.remove(player);
+    }
+
+    public void clearDamagers() {
+        damageByPlayers.clear();
+    }
+
+    public List<Player> getDamagers() {
+        return new ArrayList<>(damageByPlayers.keySet());
+    }
+
+    public void putDamager(Player player, double damage) {
+        damageByPlayers.put(player, damageByPlayers.getOrDefault(player, 0D) + damage);
+    }
 
     public boolean isNear(@NotNull Player player) {
         return isNear(player.getLocation());
@@ -204,7 +219,8 @@ public abstract class Boss implements Listener {
             }
             bossDeadMessage();
             rewardPlayers();
-            damageByPlayers.clear();
+            clearDamagers();
+            task.cancel();
             return;
         }
 
@@ -238,7 +254,7 @@ public abstract class Boss implements Listener {
             player.sendMessage(timeSpentText);
         });
 
-        List<Player> topList = getTop(11);
+        List<Player> topList = getTop(10);
         Bukkit.getPluginManager().callEvent(new SuckingEvent(topList));
         damageByPlayers.forEach((player, damage) -> {
             player.sendMessage(Component.text("§e===== §2TOP DAMAGE §e====="));
@@ -265,13 +281,13 @@ public abstract class Boss implements Listener {
     public void activate() {
         if ((task == null || task.isCancelled()) && !boss.isDead()) {
             task = Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
-                List<Player> set = new ArrayList<>(damageByPlayers.keySet());
+                List<Player> damagers = getDamagers();
                 AtomicBoolean isAlived = new AtomicBoolean(false);
-                set.forEach(player -> {
-                    if (!isNear(player) && !boss.isDead()) {
+                damagers.forEach(player -> {
+                    if (!isNear(player) && !boss.isDead() && boss.getHealth() > boss.getMaxHealth() * 0.1) {
                         damagePlayer(player, 200);
                         if (boss.getHealth() > saveDamagePercent) {
-                            damageByPlayers.remove(player);
+                            removeDamager(player);
                         }
                     }
                     if (!player.isDead()) {
@@ -279,7 +295,7 @@ public abstract class Boss implements Listener {
                     }
                 });
 
-                if (damageByPlayers.isEmpty() || boss.isDead() || !isAlived.get()) {
+                if (getDamagers().isEmpty() || boss.isDead() || !isAlived.get()) {
                     stopBattle();
                 } else {
                     startBattle();
@@ -308,7 +324,7 @@ public abstract class Boss implements Listener {
         AttributeInstance instance = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (instance != null) {
             if (boss.getHealth() > instance.getBaseValue() * 0.2) {
-                damageByPlayers.remove(event.getPlayer());
+                removeDamager(event.getPlayer());
             }
         }
     }

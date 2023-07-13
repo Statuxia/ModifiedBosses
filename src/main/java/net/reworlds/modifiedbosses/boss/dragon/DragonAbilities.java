@@ -55,7 +55,7 @@ public class DragonAbilities {
     public long activate() {
         long lastAbility = dragon.getLastAbility();
         int phase = dragon.getPhase();
-        if (dragon.getDamageByPlayers().isEmpty()) {
+        if (dragon.getDamagers().isEmpty()) {
             return lastAbility;
         }
         if (lastAbility + (1000L * ThreadLocalRandom.current().nextInt(18, 26)) > System.currentTimeMillis()) {
@@ -75,15 +75,15 @@ public class DragonAbilities {
     }
 
     private void dragonRoar() {
-        Map<Player, Double> damageByPlayers = dragon.getDamageByPlayers();
-        damageByPlayers.forEach((player, damage) -> {
+        List<Player> damagers = dragon.getDamagers();
+        damagers.forEach(player -> {
             player.sendTitle("§c⚠ §eДраконий Рёв §c⚠§r", "§eПодготовьтесь к падению!§r");
             player.sendMessage(Component.text("§c⚠ §eДраконий Рёв §c⚠§ \n§eПодготовьтесь к падению!§r"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
 
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-            damageByPlayers.forEach((player, damage) -> {
+            damagers.forEach(player -> {
                 if (dragon.isNear(player) && !dragon.getBoss().isDead()) {
                     if (dragon.getPhase() == 2) {
                         player.setVelocity(new Vector(0, 2 * 2, 0));
@@ -98,16 +98,16 @@ public class DragonAbilities {
     }
 
     private void voidView() {
-        Map<Player, Double> damageByPlayers = dragon.getDamageByPlayers();
+        List<Player> damagers = dragon.getDamagers();
         PotionEffect darkness = new PotionEffect(PotionEffectType.DARKNESS, 200, 1);
         PotionEffect blindness = new PotionEffect(PotionEffectType.BLINDNESS, 200, 1);
-        damageByPlayers.forEach((player, damage) -> {
+        damagers.forEach(player -> {
             player.sendTitle("§c⚠ §8Взгляд Тьмы §c⚠§r", "");
             player.sendMessage(Component.text("§c⚠ §8Взгляд Тьмы §c⚠§r"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-            damageByPlayers.forEach((player, damage) -> {
+            damagers.forEach(player -> {
                 if (dragon.isNear(player) && !dragon.getBoss().isDead()) {
                     player.addPotionEffect(darkness);
                     player.addPotionEffect(blindness);
@@ -120,9 +120,9 @@ public class DragonAbilities {
     private void cosmicRay() {
         List<Location> locations = new ArrayList<>();
         List<Player> players = new ArrayList<>();
-        Map<Player, Double> damageByPlayers = dragon.getDamageByPlayers();
+        List<Player> damagers = dragon.getDamagers();
 
-        damageByPlayers.forEach((player, damage) -> {
+        damagers.forEach(player -> {
             player.sendTitle("§c⚠ §dКосмический Луч §c⚠§r", "§eУбегайте из зоны поражения!§r");
             player.sendMessage(Component.text("§c⚠ §dКосмический Луч §c⚠ \n§eУбегайте из зоны поражения!§r"));
             Timer.of(player, "cosmicRay", 5, "§dКосмический Луч", BarColor.PINK);
@@ -165,7 +165,7 @@ public class DragonAbilities {
                 });
             });
 
-            damageByPlayers.forEach((player, damage) -> {
+            damagers.forEach(player -> {
                 if (dragon.isNear(player) && !dragon.getBoss().isDead()) {
                     player.playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
                 }
@@ -174,10 +174,10 @@ public class DragonAbilities {
     }
 
     private void shadowOfDeath() {
-        Map<Player, Double> damageByPlayers = dragon.getDamageByPlayers();
+        List<Player> damagers = dragon.getDamagers();
         List<Player> players = new ArrayList<>();
 
-        damageByPlayers.forEach((player, damage) -> {
+        damagers.forEach(player -> {
             player.sendTitle("§c⚠ §5Дыхание Смерти §c⚠§r", "§eУбегайте из зоны поражения!§r");
             player.sendMessage(Component.text("§c⚠ §5Дыхание Смерти §c⚠ \n§eУбегайте из зоны поражения!§r"));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
@@ -230,7 +230,7 @@ public class DragonAbilities {
                             .getNearbyLivingEntities(target.getLocation(), 3, 3, 3);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player)
                             || player.getGameMode() == GameMode.SPECTATOR)
-                            || !dragon.getDamageByPlayers().containsKey(player));
+                            || !dragon.getDamagers().contains(player));
                     int damage = 50 / (nearbyEntities.size() + 1);
                     nearbyEntities.forEach(entity -> {
                         dragon.damagePlayer(entity, damage);
@@ -274,7 +274,7 @@ public class DragonAbilities {
                             .getNearbyLivingEntities(target.getLocation(), 14, 14, 14);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player)
                             || player.getGameMode() == GameMode.SPECTATOR)
-                            || !dragon.getDamageByPlayers().containsKey(player));
+                            || !dragon.getDamagers().contains(player));
                     int damage = 10 * nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
                         if (entity instanceof Player) {
@@ -291,8 +291,9 @@ public class DragonAbilities {
 
     private void plagueSurface() {
         List<Player> targets = getTargets(9);
+        List<Player> damagers = dragon.getDamagers();
 
-        dragon.getDamageByPlayers().forEach((player, damage) -> {
+        damagers.forEach(player -> {
             if (!targets.contains(player)) {
                 player.sendTitle("§b⚠ §2Чума Порченой Крови §c⚠§r", "§eПодойдите к союзнику с эффектом!§r");
                 player.sendMessage("§b⚠ §2Чума Порченой Крови §c⚠ \n§eПодойдите к союзнику с эффектом!§r");
@@ -320,15 +321,14 @@ public class DragonAbilities {
         }
 
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
-            List<Player> damageTo = new ArrayList<>(dragon.getDamageByPlayers().keySet());
-            targets.forEach(damageTo::remove);
+            targets.forEach(damagers::remove);
             targets.forEach(target -> {
                 if (dragon.isNear(target) && !dragon.getBoss().isDead()) {
                     Collection<Entity> nearbyEntities = target.getWorld()
                             .getNearbyEntities(target.getLocation(), 2, 2, 2);
                     nearbyEntities.forEach(entity -> {
                         if (entity instanceof Player player) {
-                            damageTo.remove(player);
+                            damagers.remove(player);
                         }
                     });
                 }
@@ -336,7 +336,8 @@ public class DragonAbilities {
                 getPlagueSurfaceTeam().removeEntity(target);
                 TeamUtils.returnTeamBefore(target);
             });
-            damageTo.forEach(player -> {
+            damagers.forEach(player -> {
+
                 if (player.getGameMode() == GameMode.SPECTATOR) {
                     return;
                 }
@@ -349,8 +350,7 @@ public class DragonAbilities {
     }
 
     private List<Player> getTargets(int everyN) {
-        List<Player> players = new ArrayList<>(dragon.getDamageByPlayers().keySet());
-
+        List<Player> players = dragon.getDamagers();
         if (everyN == 1) {
             return players;
         }

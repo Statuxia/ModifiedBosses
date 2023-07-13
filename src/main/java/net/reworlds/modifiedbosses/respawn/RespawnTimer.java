@@ -52,6 +52,8 @@ public class RespawnTimer {
                 }
             }
             players.forEach(bar::addPlayer);
+
+            bar.setTitle(title + ": " + secondsToTimerFormat(current.get()));
         }, 0, 20);
 
         TIMERS.put(id, this);
@@ -80,5 +82,13 @@ public class RespawnTimer {
     private void calc() {
         double percents = current.get() / percent;
         bar.setProgress(percents / 100.0);
+    }
+
+    public static String secondsToTimerFormat(int seconds) {
+        int hours = seconds / 3600;
+        int minutes = (seconds % 3600) / 60;
+        int remainingSeconds = seconds % 60;
+
+        return String.format("%02d:%02d:%02d", hours, minutes, remainingSeconds);
     }
 }
