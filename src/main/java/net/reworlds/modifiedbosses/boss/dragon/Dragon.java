@@ -61,6 +61,7 @@ public class Dragon extends Boss {
         boss.setCustomName(bossName);
         boss.setHealth(2000);
         boss.setAI(true);
+        clearDamagers();
         if (boss instanceof EnderDragon dragon) {
             dragon.setPhase(EnderDragon.Phase.CIRCLING);
         }
