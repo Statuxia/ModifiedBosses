@@ -19,9 +19,10 @@ public class Bosses {
         World world = Bukkit.getWorld("world_the_end");
         Location location = new Location(world, 0, 100, 0);
         String bossName = "Эндер-Дракон";
+        String bossNameColor = "§5";
         int respawnMinutes = 15;
         int respawnBossBarRadius = 200;
-        BossTemplate template = new BossTemplate(Dragon.class, EntityType.ENDER_DRAGON, bossName, location, respawnMinutes, respawnBossBarRadius);
+        BossTemplate template = new BossTemplate(Dragon.class, EntityType.ENDER_DRAGON, bossName, bossNameColor, location, respawnMinutes, respawnBossBarRadius);
         bosses.put(bossName, template);
     }
 }

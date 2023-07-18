@@ -19,6 +19,7 @@ public class BossTemplate {
     private final int respawnBossBarRadius;
     private final int respawnMinutes;
     private final String bossName;
+    private final String bossNameColor;
     private final Class<? extends Boss> bossClass;
     @Getter
     private LivingEntity bossEntity;
@@ -32,9 +33,10 @@ public class BossTemplate {
     @Getter
     private RespawnTimer respawnTimer;
 
-    public BossTemplate(Class<? extends Boss> bossClass, EntityType type, String bossName, Location location, int respawnMinutes, int respawnBossBarRadius) {
+    public BossTemplate(Class<? extends Boss> bossClass, EntityType type, String bossName, String bossNameColor, Location location, int respawnMinutes, int respawnBossBarRadius) {
         this.type = type;
         this.bossName = bossName;
+        this.bossNameColor = bossNameColor;
         this.location = location;
         this.respawnMinutes = respawnMinutes;
         this.respawnBossBarRadius = respawnBossBarRadius;
@@ -47,7 +49,7 @@ public class BossTemplate {
         if (entity instanceof LivingEntity livingEntity) {
             bossEntity = livingEntity;
             try {
-                boss = bossClass.getConstructor(LivingEntity.class, String.class).newInstance(entity, bossName);
+                boss = bossClass.getConstructor(LivingEntity.class, String.class, String.class).newInstance(entity, bossName, bossNameColor);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;

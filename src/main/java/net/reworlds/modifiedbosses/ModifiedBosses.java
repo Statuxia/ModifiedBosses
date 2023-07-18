@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.reworlds.modifiedbosses.charms.Charms;
 import net.reworlds.modifiedbosses.commands.BestiaryCommand;
+import net.reworlds.modifiedbosses.commands.BossDamage;
 import net.reworlds.modifiedbosses.commands.RPCommand;
 import net.reworlds.modifiedbosses.commands.boss.dragon.BestiaryDragonCommand;
 import net.reworlds.modifiedbosses.commands.boss.dragon.BestiaryDragonDropCommand;
@@ -35,6 +36,7 @@ public final class ModifiedBosses extends JavaPlugin {
         Bukkit.getPluginCommand("bestiary").setExecutor(new BestiaryCommand());
         Bukkit.getPluginCommand("bDragon").setExecutor(new BestiaryDragonCommand());
         Bukkit.getPluginCommand("bDragonDrop").setExecutor(new BestiaryDragonDropCommand());
+        Bukkit.getPluginCommand("bossDamage").setExecutor(new BossDamage());
         Bukkit.getPluginManager().registerEvents(new Events(), this);
     }
 

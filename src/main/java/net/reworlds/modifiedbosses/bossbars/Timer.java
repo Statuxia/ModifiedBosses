@@ -16,8 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Timer {
 
-    public static final Map<String, Timer> TIMERS = new HashMap<>();
-
     private BossBar bar;
     private int seconds;
     private double percent;
@@ -42,11 +40,6 @@ public class Timer {
             calc();
         }, 0, 20);
 
-        TIMERS.put(id, this);
-    }
-
-    public static Optional<Timer> get(String id) {
-        return Optional.ofNullable(TIMERS.get(id));
     }
 
     public static Timer of(Player player, String id, int seconds, String title, BarColor color) {

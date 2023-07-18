@@ -125,7 +125,11 @@ public class DragonAbilities {
         damagers.forEach(player -> {
             player.sendTitle("§c⚠ §dКосмический Луч §c⚠§r", "§eУбегайте из зоны поражения!§r");
             player.sendMessage(Component.text("§c⚠ §dКосмический Луч §c⚠ \n§eУбегайте из зоны поражения!§r"));
-            Timer.of(player, "cosmicRay", 5, "§dКосмический Луч", BarColor.PINK);
+            try {
+                Timer.of(player, "cosmicRay", 5, "§dКосмический Луч", BarColor.PINK);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             players.add(player);
         });
@@ -205,7 +209,11 @@ public class DragonAbilities {
         targets.forEach(player -> {
             player.sendTitle("§b⚠ §bБомба Души §c⚠§r", "§eПодойдите к союзникам!§r");
             player.sendMessage("§b⚠ §bБомба Души §c⚠ \n§eПодойдите к союзникам!§r");
-            Timer.of(player, "soulBomb", 10, "§bБомба Души", BarColor.BLUE);
+            try {
+                Timer.of(player, "soulBomb", 10, "§bБомба Души", BarColor.BLUE);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             TeamUtils.saveTeamBefore(player, getAbilitiesTeam());
             getSoulBombTeam().addEntity(player);
@@ -249,7 +257,11 @@ public class DragonAbilities {
         targets.forEach(player -> {
             player.sendTitle("§b⚠ §4Кипящая Кровь §c⚠§r", "§eОтбегите от союзников!§r");
             player.sendMessage("§b⚠ §4Кипящая Кровь §c⚠ \n§eОтбегите от союзников!§r");
-            Timer.of(player, "boilingBlood", 10, "§4Кипящая Кровь", BarColor.RED);
+            try {
+                Timer.of(player, "boilingBlood", 10, "§4Кипящая Кровь", BarColor.RED);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             TeamUtils.saveTeamBefore(player, getAbilitiesTeam());
             getBoilingBloodTeam().addEntity(player);
@@ -297,12 +309,20 @@ public class DragonAbilities {
             if (!targets.contains(player)) {
                 player.sendTitle("§b⚠ §2Чума Порченой Крови §c⚠§r", "§eПодойдите к союзнику с эффектом!§r");
                 player.sendMessage("§b⚠ §2Чума Порченой Крови §c⚠ \n§eПодойдите к союзнику с эффектом!§r");
-                Timer.of(player, "plagueSurface2", 10, "§2Чума Порченой Крови", BarColor.GREEN);
+                try {
+                    Timer.of(player, "plagueSurface2", 10, "§2Чума Порченой Крови", BarColor.GREEN);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
                 player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             } else {
                 player.sendTitle("§b⚠ §2Метка иммунитета §c⚠§r", "§eЗащитите зараженных союзников!§r");
                 player.sendMessage("§b⚠ §2Метка иммунитета §c⚠ \n§eПодойдите к союзнику с эффектом!§r");
-                Timer.of(player, "plagueSurface", 10, "§2Метка иммунитета", BarColor.GREEN);
+                try {
+                    Timer.of(player, "plagueSurface", 10, "§2Метка иммунитета", BarColor.GREEN);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
                 player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
 
                 TeamUtils.saveTeamBefore(player, getAbilitiesTeam());
@@ -359,8 +379,10 @@ public class DragonAbilities {
         int size = players.size();
         for (int i = 0; i < size / everyN + 1; i++) {
             Player temp = players.get(ThreadLocalRandom.current().nextInt(players.size()));
-            players.remove(temp);
-            targets.add(temp);
+            if (temp.isOnline() && !temp.isDead() && dragon.isNear(temp)) {
+                players.remove(temp);
+                targets.add(temp);
+            }
         }
         return targets;
     }

@@ -22,6 +22,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -29,21 +31,18 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public abstract class Boss implements Listener {
 
     @Getter
-    protected final String bossName;
-    @Getter
     protected final LivingEntity boss;
-    protected final Map<Player, Double> damageByPlayers = new HashMap<>();
+    @Getter
+    protected final String bossName;
+    protected final String bossNameColor;
+    protected final Map<UUID, Double> damageByPlayers = new HashMap<>();
     protected BukkitTask task;
     protected long startTime;
     protected boolean battleStarted;
@@ -59,9 +58,10 @@ public abstract class Boss implements Listener {
     @Setter(AccessLevel.PROTECTED)
     private double saveDamagePercent;
 
-    public Boss(LivingEntity boss, String bossName) {
+    public Boss(LivingEntity boss, String bossName, String bossNameColor) {
         this.boss = boss;
         this.bossName = bossName;
+        this.bossNameColor = bossNameColor;
     }
 
     /*
@@ -135,7 +135,7 @@ public abstract class Boss implements Listener {
 
     protected void addDamage(@NotNull Player player, double damage) {
         if (!getDamagers().contains(player)) {
-            player.sendMessage("§eВы вступили в бой с боссом " + bossName + "§e!§r");
+            player.sendMessage("§eВы вступили в бой с боссом " + bossNameColor + bossName + "§e!§r");
             player.sendMessage("§cВ случае побега с поля битвы вы будете убиты!§r");
         }
         putDamager(player, damage);
@@ -146,7 +146,7 @@ public abstract class Boss implements Listener {
      */
 
     public void removeDamager(Player player) {
-        damageByPlayers.remove(player);
+        damageByPlayers.remove(player.getUniqueId());
     }
 
     public void clearDamagers() {
@@ -154,11 +154,13 @@ public abstract class Boss implements Listener {
     }
 
     public List<Player> getDamagers() {
-        return new ArrayList<>(damageByPlayers.keySet());
+        List<UUID> uuids = new ArrayList<>(damageByPlayers.keySet());
+        return getUUIDPlayers(uuids);
     }
 
     public void putDamager(Player player, double damage) {
-        damageByPlayers.put(player, damageByPlayers.getOrDefault(player, 0D) + damage);
+        UUID uuid = player.getUniqueId();
+        damageByPlayers.put(uuid, damageByPlayers.getOrDefault(uuid, 0D) + damage);
     }
 
     public boolean isNear(@NotNull Player player) {
@@ -174,9 +176,24 @@ public abstract class Boss implements Listener {
     }
 
     public List<Player> getTop(int limit) {
-        return damageByPlayers.entrySet().stream()
-                .sorted(Map.Entry.<Player, Double>comparingByValue().reversed()).limit(limit).map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        List<UUID> collect = damageByPlayers.entrySet().stream()
+                .sorted(Map.Entry.<UUID, Double>comparingByValue().reversed()).limit(limit).map(Map.Entry::getKey)
+                .toList();
+        return getUUIDPlayers(collect);
+    }
+
+    @NotNull
+    private List<Player> getUUIDPlayers(List<UUID> collect) {
+        List<Player> players = new ArrayList<>();
+        collect.forEach(uuid -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null) {
+                damageByPlayers.remove(uuid);
+                return;
+            }
+            players.add(player);
+        });
+        return players;
     }
 
     protected boolean isExplosionCause(@NotNull EntityDamageEvent.DamageCause cause) {
@@ -229,9 +246,7 @@ public abstract class Boss implements Listener {
             boss.setHealth(attribute.getBaseValue());
         }
         setSettings();
-        boss.getNearbyEntities(radius, radius, radius).forEach(entity -> {
-            entity.sendMessage("§cВсе атакующие были убиты. Босс восстановлен.");
-        });
+        boss.getNearbyEntities(radius, radius, radius).forEach(entity -> entity.sendMessage("§cВсе атакующие были убиты. Босс восстановлен."));
     }
 
     public abstract void removeBoss();
@@ -256,7 +271,7 @@ public abstract class Boss implements Listener {
 
         List<Player> topList = getTop(10);
         Bukkit.getPluginManager().callEvent(new SuckingEvent(topList));
-        damageByPlayers.forEach((player, damage) -> {
+        getDamagers().forEach(player -> {
             player.sendMessage(Component.text("§e===== §2TOP DAMAGE §e====="));
             for (int i = 0; i < topList.size(); i++) {
                 String color;
@@ -269,7 +284,7 @@ public abstract class Boss implements Listener {
                     color = "§7";
                     colorDamage = "§7";
                 }
-                player.sendMessage(Component.text(color + (i + 1) + ". " + top.getName() + " " + colorDamage + damageByPlayers.get(top).longValue()));
+                player.sendMessage(Component.text(color + (i + 1) + ". " + top.getName() + " " + colorDamage + damageByPlayers.get(top.getUniqueId()).longValue()));
             }
         });
     }
@@ -339,13 +354,17 @@ public abstract class Boss implements Listener {
             return;
         }
 
-        if (boss.isInvulnerable()) {
+        if (event.getDamager() instanceof AreaEffectCloud) {
+            event.setCancelled(true);
+        }
+
+        if (boss.isInvulnerable() && event.getEntity().equals(boss)) {
             invulnerableBossDamage();
             event.setCancelled(true);
             return;
         }
 
-        if (!allowExplodeDamage && isExplosionCause(event.getCause())) {
+        if (!allowExplodeDamage && isExplosionCause(event.getCause()) && event.getEntity().equals(boss)) {
             event.setCancelled(true);
             return;
         }
@@ -403,9 +422,9 @@ public abstract class Boss implements Listener {
         }
 
         Player player = event.getPlayer();
-        if (!isNear(player) && !boss.isDead()) {
+        if (!boss.isDead()) {
             damagePlayer(player, 200D);
-            damageByPlayers.remove(player);
+            damageByPlayers.remove(player.getUniqueId());
         }
     }
 
@@ -416,7 +435,7 @@ public abstract class Boss implements Listener {
         }
 
         Entity entity = event.getEntity();
-        if (entity instanceof Player player && isNear(player) && !boss.isDead() && isBlackListEffect(event.getNewEffect())) {
+        if (entity instanceof Player player && isNear(player) && !boss.isDead() && isBlackListEffect(event.getNewEffect()) && getDamagers().contains(player)) {
             event.setCancelled(true);
         }
     }
@@ -436,6 +455,25 @@ public abstract class Boss implements Listener {
         }
 
         item.removeScoreboardTag(player.getName());
+    }
+
+    @EventHandler
+    public void onCommand(PlayerCommandPreprocessEvent event) {
+        if (!event.getMessage().equalsIgnoreCase("/bossdamage")) {
+            return;
+        }
+        if (boss == null || boss.isDead()) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        double damage = damageByPlayers.getOrDefault(player.getUniqueId(), -1D);
+        if (damage == -1) {
+            return;
+        }
+
+        player.sendMessage("§aВы сражаетесь с боссом " + bossNameColor + bossName);
+        player.sendMessage("§aВы нанесли §b" + (long) damage + " §aурона!");
     }
 
     protected abstract boolean isBlackListEffect(PotionEffect type);

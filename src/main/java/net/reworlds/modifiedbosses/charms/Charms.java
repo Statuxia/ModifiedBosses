@@ -98,7 +98,7 @@ public class Charms {
                             PotionEffect effect = CharmsEffects.getEffects().get(key);
                             if (effect == null) {
                                 int duration = typeText.contains("night_vision") ? 1100 : 110;
-                                effect = new PotionEffect(type, duration, level - 1);
+                                effect = new PotionEffect(type, duration, level - 1, false, false);
                                 CharmsEffects.getEffects().put(key, effect);
                             }
                             player.addPotionEffect(effect);

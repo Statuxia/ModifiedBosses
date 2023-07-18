@@ -15,10 +15,7 @@ import org.bukkit.boss.BarStyle;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.entity.EnderDragonChangePhaseEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.EntityToggleGlideEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -38,9 +35,10 @@ public class Dragon extends Boss {
     private long lastAbility;
     @Getter
     private int phase;
+    private boolean isSecondPhase = false;
 
-    public Dragon(LivingEntity boss, String bossName) {
-        super(boss, bossName);
+    public Dragon(LivingEntity boss, String bossName, String bossNameColor) {
+        super(boss, bossName, bossNameColor);
         setAllowExplodeDamage(false);
         setRadius(200);
         setMaxDamagePerHit(20);
@@ -61,6 +59,8 @@ public class Dragon extends Boss {
         boss.setCustomName(bossName);
         boss.setHealth(2000);
         boss.setAI(true);
+        isSecondPhase = false;
+
         clearDamagers();
         if (boss instanceof EnderDragon dragon) {
             dragon.setPhase(EnderDragon.Phase.CIRCLING);
@@ -101,21 +101,25 @@ public class Dragon extends Boss {
 
     @Override
     protected void rewardPlayers() {
-        damageByPlayers.forEach((player, damage) -> {
+        getDamagers().forEach(player -> {
+            Double damage = damageByPlayers.get(player.getUniqueId());
             player.giveExp(315);
             if (damage > minimumDamageToReward) {
-                specialReward(player);
+                specialReward(player, (int) (damage / 50));
             }
         });
     }
 
-    private void specialReward(Player player) {
+    private void specialReward(Player player, int percent) {
+        percent = Math.min(percent, 20);
         player.giveExp(1080);
-        Bukkit.getLogger().info("" + player.getName());
-        if (ThreadLocalRandom.current().nextInt(100) < 50) {
+        int applechance = ThreadLocalRandom.current().nextInt(100);
+        if (applechance < 40 + percent) {
             giveOrDrop(player, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
         }
-        if (ThreadLocalRandom.current().nextInt(100) < 30) {
+
+        int charmchance = ThreadLocalRandom.current().nextInt(100);
+        if (charmchance < 20 + percent) {
             ItemStack item;
             if (ThreadLocalRandom.current().nextInt(100) < 20) {
                 item = Charms.EPIC.get(ThreadLocalRandom.current().nextInt(Charms.EPIC.size())).getCharm();
@@ -129,7 +133,6 @@ public class Dragon extends Boss {
             }
             Component text = Component.text("§e" + player.getName() + " выбивает ").append(itemDisplayName).append(Component.text("§e!"));
             Bukkit.getOnlinePlayers().forEach(onlinePlayer -> onlinePlayer.sendMessage(text));
-            Bukkit.getLogger().info(ComponentUtils.plainText(text));
         }
     }
 
@@ -140,6 +143,10 @@ public class Dragon extends Boss {
                 ((EnderDragon) boss).setPhase(EnderDragon.Phase.CIRCLING);
             }
         } catch (Exception ignored) {
+        }
+
+        if (boss.getLocation().getY() < 60) {
+            boss.teleport(boss.getLocation().clone().set(0, 100, 0));
         }
 
         getDamagers().forEach(player -> {
@@ -173,6 +180,12 @@ public class Dragon extends Boss {
 
         if (boss.getHealth() <= 1000) {
             phase = 2;
+            if (!isSecondPhase) {
+                getDamagers().forEach(player -> {
+                    player.sendMessage(Component.text(bossNameColor + bossName + " §cперешёл на 2 фазу!"));
+                });
+            }
+            isSecondPhase = true;
         }
 
         if (!boss.isDead() && phase != 0) {
@@ -240,6 +253,19 @@ public class Dragon extends Boss {
                 player.setGliding(false);
             }
         }
+    }
+
+    @EventHandler
+    public void onRegenerate(EntityRegainHealthEvent event) {
+        if (event.getRegainReason() != EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL) {
+            return;
+        }
+
+        if (!event.getEntity().equals(boss)) {
+            return;
+        }
+
+        event.setCancelled(true);
     }
 
     @Override
