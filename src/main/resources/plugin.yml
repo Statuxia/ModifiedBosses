@@ -3,15 +3,13 @@ version: '${project.version}'
 main: net.reworlds.modifiedbosses.ModifiedBosses
 api-version: '1.20'
 author: 'Statuxia'
+depend:
+  [ProtocolLib, UltimateAdvancementAPI]
 
 commands:
   rp:
     description: "Установить ресурспак сервера"
   bestiary:
     description: "Бестиарий боссов"
-  bDragon:
-    description: ""
-  bDragonDrop:
-    description: ""
   bossDamage:
     description: ""

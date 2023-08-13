@@ -1,16 +1,17 @@
 package net.reworlds.modifiedbosses.boss.dragon;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.title.Title;
 import net.reworlds.modifiedbosses.ModifiedBosses;
 import net.reworlds.modifiedbosses.bossbars.Timer;
+import net.reworlds.modifiedbosses.utils.ComponentUtils;
 import net.reworlds.modifiedbosses.utils.Particles;
+import net.reworlds.modifiedbosses.utils.Random;
 import net.reworlds.modifiedbosses.utils.TeamUtils;
 import org.bukkit.*;
 import org.bukkit.boss.BarColor;
-import org.bukkit.entity.DragonFireball;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Team;
@@ -19,7 +20,6 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class DragonAbilities {
@@ -31,15 +31,15 @@ public class DragonAbilities {
     }
 
     public static Team getSoulBombTeam() {
-        return TeamUtils.getTeam(ChatColor.BLUE, "SoulBombTeam");
+        return TeamUtils.getTeam(NamedTextColor.BLUE, "SoulBombTeam");
     }
 
     public static Team getBoilingBloodTeam() {
-        return TeamUtils.getTeam(ChatColor.RED, "BoilingBloodTeam");
+        return TeamUtils.getTeam(NamedTextColor.RED, "BoilingBloodTeam");
     }
 
     public static Team getPlagueSurfaceTeam() {
-        return TeamUtils.getTeam(ChatColor.GREEN, "PlagueSurfaceTeam");
+        return TeamUtils.getTeam(NamedTextColor.GREEN, "PlagueSurfaceTeam");
     }
 
     public static List<Team> getAbilitiesTeam() {
@@ -77,8 +77,10 @@ public class DragonAbilities {
     private void dragonRoar() {
         List<Player> damagers = dragon.getDamagers();
         damagers.forEach(player -> {
-            player.sendTitle("§c⚠ §eДраконий Рёв §c⚠§r", "§eПодготовьтесь к падению!§r");
-            player.sendMessage(Component.text("§c⚠ §eДраконий Рёв §c⚠§ \n§eПодготовьтесь к падению!§r"));
+            Component message1 = ComponentUtils.gradient("#FF1C72", "#FEB781", "⚠ Драконий Рёв ⚠");
+            Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Подготовьтесь к падению!");
+            player.showTitle(Title.title(message1, message2));
+            player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
 
         });
@@ -102,13 +104,19 @@ public class DragonAbilities {
         PotionEffect darkness = new PotionEffect(PotionEffectType.DARKNESS, 200, 1);
         PotionEffect blindness = new PotionEffect(PotionEffectType.BLINDNESS, 200, 1);
         damagers.forEach(player -> {
-            player.sendTitle("§c⚠ §8Взгляд Тьмы §c⚠§r", "");
-            player.sendMessage(Component.text("§c⚠ §8Взгляд Тьмы §c⚠§r"));
+            Component message1 = ComponentUtils.gradient("#1F3F86", "#0B162F", "⚠ Взгляд Тьмы ⚠");
+            Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Эндермены злы на вас!");
+            player.showTitle(Title.title(message1, message2));
+            player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
         });
         Bukkit.getScheduler().runTaskLater(ModifiedBosses.getINSTANCE(), () -> {
             damagers.forEach(player -> {
                 if (dragon.isNear(player) && !dragon.getBoss().isDead()) {
+                    for (int i = 0; i < dragon.getPhase(); i++) {
+                        Enderman enderman = (Enderman) player.getWorld().spawnEntity(Random.randomFlatY(player.getLocation(), true, 10), EntityType.ENDERMAN);
+                        enderman.setTarget(player);
+                    }
                     player.addPotionEffect(darkness);
                     player.addPotionEffect(blindness);
                     player.playSound(player, Sound.ENTITY_GHAST_WARN, 0.5f, 1);
@@ -123,10 +131,12 @@ public class DragonAbilities {
         List<Player> damagers = dragon.getDamagers();
 
         damagers.forEach(player -> {
-            player.sendTitle("§c⚠ §dКосмический Луч §c⚠§r", "§eУбегайте из зоны поражения!§r");
-            player.sendMessage(Component.text("§c⚠ §dКосмический Луч §c⚠ \n§eУбегайте из зоны поражения!§r"));
+            Component message1 = ComponentUtils.gradient("#E756B2", "#AB1283", "⚠ Космический луч ⚠");
+            Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Убегайте из зоны поражения!");
+            player.showTitle(Title.title(message1, message2));
+            player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
             try {
-                Timer.of(player, "cosmicRay", 5, "§dКосмический Луч", BarColor.PINK);
+                Timer.of(player, 5, "§dКосмический Луч", BarColor.PINK);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
@@ -145,7 +155,7 @@ public class DragonAbilities {
                         Particles.particleLine(dragon.getBoss().getLocation().clone().add(0, -0.5, 0), location.clone().add(-0.5, 0, 0.5), Color.RED);
                         Particles.particleLine(dragon.getBoss().getLocation().clone().add(0, -0.5, 0), location.clone().add(0.5, 0, -0.5), Color.RED);
                         Particles.particleLine(dragon.getBoss().getLocation(), location, Color.FUCHSIA);
-                        Particles.circle(location.clone(), Color.FUCHSIA, 6);
+                        Particles.circle(location.clone(), Color.FUCHSIA, 6, false);
                         player.playSound(player, Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
                         if (finalI == 8) {
                             locations.add(player.getLocation().clone());
@@ -159,7 +169,8 @@ public class DragonAbilities {
             locations.forEach(location -> {
                 location.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, location.clone().add(0, 1, 0), 1);
                 location.getNearbyEntities(6, 6, 6).forEach(entity -> {
-                    if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR) {
+                    if (entity instanceof Player player && player.getGameMode() != GameMode.SPECTATOR
+                            && dragon.getDamagers().contains(player) && dragon.calculateDistance(location, player.getLocation()) <= 6) {
                         if (dragon.getPhase() == 2) {
                             dragon.damagePlayer(player, 12 * 2);
                         } else {
@@ -182,8 +193,10 @@ public class DragonAbilities {
         List<Player> players = new ArrayList<>();
 
         damagers.forEach(player -> {
-            player.sendTitle("§c⚠ §5Дыхание Смерти §c⚠§r", "§eУбегайте из зоны поражения!§r");
-            player.sendMessage(Component.text("§c⚠ §5Дыхание Смерти §c⚠ \n§eУбегайте из зоны поражения!§r"));
+            Component message1 = ComponentUtils.gradient("#594B92", "#981173", "⚠ Дыхание Смерти ⚠");
+            Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Убегайте из зоны поражения!");
+            player.showTitle(Title.title(message1, message2));
+            player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
             player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             players.add(player);
         });
@@ -207,10 +220,12 @@ public class DragonAbilities {
         List<Player> targets = getTargets(8);
 
         targets.forEach(player -> {
-            player.sendTitle("§b⚠ §bБомба Души §c⚠§r", "§eПодойдите к союзникам!§r");
-            player.sendMessage("§b⚠ §bБомба Души §c⚠ \n§eПодойдите к союзникам!§r");
+            Component message1 = ComponentUtils.gradient("#0295C9", "#1E3D84", "⚠ Бомба Души ⚠");
+            Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Подойдите к союзникам!");
+            player.showTitle(Title.title(message1, message2));
+            player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
             try {
-                Timer.of(player, "soulBomb", 10, "§bБомба Души", BarColor.BLUE);
+                Timer.of(player, 10, "§bБомба Души", BarColor.BLUE);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
@@ -238,8 +253,10 @@ public class DragonAbilities {
                             .getNearbyLivingEntities(target.getLocation(), 3, 3, 3);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player)
                             || player.getGameMode() == GameMode.SPECTATOR)
-                            || !dragon.getDamagers().contains(player));
-                    int damage = 50 / (nearbyEntities.size() + 1);
+                            || !dragon.getDamagers().contains(player)
+                            || dragon.calculateDistance(target.getLocation(), player.getLocation()) > 6
+                    );
+                    int damage = 56 / (nearbyEntities.size() + 1);
                     nearbyEntities.forEach(entity -> {
                         dragon.damagePlayer(entity, damage);
                     });
@@ -255,10 +272,12 @@ public class DragonAbilities {
         List<Player> targets = getTargets(1);
 
         targets.forEach(player -> {
-            player.sendTitle("§b⚠ §4Кипящая Кровь §c⚠§r", "§eОтбегите от союзников!§r");
-            player.sendMessage("§b⚠ §4Кипящая Кровь §c⚠ \n§eОтбегите от союзников!§r");
+            Component message1 = ComponentUtils.gradient("#F13F40", "#A01109", "⚠ Кипящая Кровь ⚠");
+            Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Отбегите от союзников!");
+            player.showTitle(Title.title(message1, message2));
+            player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
             try {
-                Timer.of(player, "boilingBlood", 10, "§4Кипящая Кровь", BarColor.RED);
+                Timer.of(player, 10, "§4Кипящая Кровь", BarColor.RED);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
@@ -286,7 +305,9 @@ public class DragonAbilities {
                             .getNearbyLivingEntities(target.getLocation(), 14, 14, 14);
                     nearbyEntities.removeIf(livingEntity -> (!(livingEntity instanceof Player player)
                             || player.getGameMode() == GameMode.SPECTATOR)
-                            || !dragon.getDamagers().contains(player));
+                            || !dragon.getDamagers().contains(player)
+                            || dragon.calculateDistance(target.getLocation(), player.getLocation()) > 6
+                    );
                     int damage = 10 * nearbyEntities.size();
                     nearbyEntities.forEach(entity -> {
                         if (entity instanceof Player) {
@@ -307,19 +328,23 @@ public class DragonAbilities {
 
         damagers.forEach(player -> {
             if (!targets.contains(player)) {
-                player.sendTitle("§b⚠ §2Чума Порченой Крови §c⚠§r", "§eПодойдите к союзнику с эффектом!§r");
-                player.sendMessage("§b⚠ §2Чума Порченой Крови §c⚠ \n§eПодойдите к союзнику с эффектом!§r");
+                Component message1 = ComponentUtils.gradient("#47FA1E", "#268510", "⚠ Чума Порченой Крови ⚠");
+                Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Подойдите к союзнику с эффектом!");
+                player.showTitle(Title.title(message1, message2));
+                player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
                 try {
-                    Timer.of(player, "plagueSurface2", 10, "§2Чума Порченой Крови", BarColor.GREEN);
+                    Timer.of(player, 10, "§2Чума Порченой Крови", BarColor.GREEN);
                 } catch (Exception exception) {
                     exception.printStackTrace();
                 }
                 player.playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1);
             } else {
-                player.sendTitle("§b⚠ §2Метка иммунитета §c⚠§r", "§eЗащитите зараженных союзников!§r");
-                player.sendMessage("§b⚠ §2Метка иммунитета §c⚠ \n§eПодойдите к союзнику с эффектом!§r");
+                Component message1 = ComponentUtils.gradient("#47FA1E", "#268510", "⚠ Метка иммунитета ⚠");
+                Component message2 = ComponentUtils.gradient("#F5A7CA", "#7DF1DC", "Защитите зараженных союзников!");
+                player.showTitle(Title.title(message1, message2));
+                player.sendMessage(Component.newline().append(message1).append(Component.newline()).append(message2).append(Component.newline()));
                 try {
-                    Timer.of(player, "plagueSurface", 10, "§2Метка иммунитета", BarColor.GREEN);
+                    Timer.of(player, 10, "§2Метка иммунитета", BarColor.GREEN);
                 } catch (Exception exception) {
                     exception.printStackTrace();
                 }
@@ -347,7 +372,8 @@ public class DragonAbilities {
                     Collection<Entity> nearbyEntities = target.getWorld()
                             .getNearbyEntities(target.getLocation(), 2, 2, 2);
                     nearbyEntities.forEach(entity -> {
-                        if (entity instanceof Player player) {
+                        if (entity instanceof Player player
+                                && dragon.calculateDistance(target.getLocation(), player.getLocation()) <= 6) {
                             damagers.remove(player);
                         }
                     });

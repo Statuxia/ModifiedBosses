@@ -12,12 +12,16 @@ public class BestiaryBook {
 
     private static final Component[] pages = new Component[]{
             Component.text(
-                    """
-                                    Боссы
-                            """).appendNewline().append(Component.text("• Эндер-Дракон")
-                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/bdragon"))
-                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Эндер-Дракон"))))
-                    .append(Component.text("\n\n• Скоро...\n\n• Скоро..."))
+                            """
+                                            Боссы
+                                    """)
+                    .appendNewline().append(Component.text("• Эндер-Дракон")
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/bestiary dragon"))
+                            .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Эндер-Дракон"))))
+                    .appendNewline().appendNewline().append(Component.text("• Джелу, Погибель Дьявола")
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/bestiary gelu"))
+                            .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Джелу, Погибель Дьявола"))))
+                    .append(Component.text("\n\n• Скоро..."))
     };
     private static ItemStack book;
 

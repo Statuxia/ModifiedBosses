@@ -1,21 +1,34 @@
 package net.reworlds.modifiedbosses.boss.dragon;
 
-import lombok.Getter;
+import com.fren_gor.ultimateAdvancementAPI.advancement.display.AdvancementFrameType;
+import com.fren_gor.ultimateAdvancementAPI.util.AdvancementUtils;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.reworlds.modifiedbosses.ModifiedBosses;
+import net.reworlds.modifiedbosses.advancements.AdvancementManager;
 import net.reworlds.modifiedbosses.boss.Boss;
 import net.reworlds.modifiedbosses.charms.Charms;
 import net.reworlds.modifiedbosses.charms.CharmsEffects;
 import net.reworlds.modifiedbosses.utils.ComponentUtils;
 import net.reworlds.modifiedbosses.utils.Particles;
 import net.reworlds.modifiedbosses.utils.TeamUtils;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
-import org.bukkit.entity.*;
+import org.bukkit.entity.EnderCrystal;
+import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.entity.*;
+import org.bukkit.event.entity.EnderDragonChangePhaseEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.EntityToggleGlideEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -31,20 +44,21 @@ public class Dragon extends Boss {
 
     private static List<Location> deadLocations;
     private Team bossTeam;
-    @Getter
+
     private long lastAbility;
-    @Getter
+
     private int phase;
     private boolean isSecondPhase = false;
 
-    public Dragon(LivingEntity boss, String bossName, String bossNameColor) {
-        super(boss, bossName, bossNameColor);
+    public Dragon(LivingEntity boss, String bossName, Component bossNameComponent) {
+        super(boss, bossName, bossNameComponent);
         setAllowExplodeDamage(false);
         setRadius(200);
         setMaxDamagePerHit(20);
-        setMinimumDamageToReward(50);
-        setSaveDamagePercent(100);
-        setAttributes(Map.of(Attribute.GENERIC_MAX_HEALTH, 2000));
+        setMinimumDamageToReward(100);
+        setSaveDamageHealth(300);
+        setMaxHealth(2000);
+        setAttributes(Map.of(Attribute.GENERIC_MAX_HEALTH, (double) maxHealth));
         setSettings();
         bar = setBossBar(bossName, BarColor.RED, BarStyle.SEGMENTED_10);
         activate();
@@ -53,13 +67,14 @@ public class Dragon extends Boss {
     @Override
     protected void setSettings() {
         phase = 0;
-        bossTeam = TeamUtils.getTeam(ChatColor.DARK_PURPLE, bossName + "team");
+        bossTeam = TeamUtils.getTeam(NamedTextColor.DARK_PURPLE, bossName + "team");
         bossTeam.addEntity(boss);
         boss.setGlowing(true);
-        boss.setCustomName(bossName);
-        boss.setHealth(2000);
+        boss.customName(Component.text(bossName));
+        boss.setHealth(maxHealth);
         boss.setAI(true);
         isSecondPhase = false;
+        clearDead();
 
         clearDamagers();
         if (boss instanceof EnderDragon dragon) {
@@ -104,8 +119,12 @@ public class Dragon extends Boss {
         getDamagers().forEach(player -> {
             Double damage = damageByPlayers.get(player.getUniqueId());
             player.giveExp(315);
+            net.reworlds.modifiedbosses.advancements.advs.modifiedbosses.Dragon dragon = ModifiedBosses.getAdvancementManager().dragon;
+            if (!dragon.isGranted(player)) {
+                dragon.grant(player);
+            }
             if (damage > minimumDamageToReward) {
-                specialReward(player, (int) (damage / 50));
+                specialReward(player, (int) (damage / 100));
             }
         });
     }
@@ -119,7 +138,7 @@ public class Dragon extends Boss {
         }
 
         int charmchance = ThreadLocalRandom.current().nextInt(100);
-        if (charmchance < 20 + percent) {
+        if (charmchance < 25 + percent) {
             ItemStack item;
             if (ThreadLocalRandom.current().nextInt(100) < 20) {
                 item = Charms.EPIC.get(ThreadLocalRandom.current().nextInt(Charms.EPIC.size())).getCharm();
@@ -146,7 +165,7 @@ public class Dragon extends Boss {
         }
 
         if (boss.getLocation().getY() < 60) {
-            boss.teleport(boss.getLocation().clone().set(0, 100, 0));
+            boss.teleport(spawnLocation.clone());
         }
 
         getDamagers().forEach(player -> {
@@ -178,12 +197,10 @@ public class Dragon extends Boss {
             phase = 1;
         }
 
-        if (boss.getHealth() <= 1000) {
+        if (boss.getHealth() <= (double) (maxHealth / 2)) {
             phase = 2;
             if (!isSecondPhase) {
-                getDamagers().forEach(player -> {
-                    player.sendMessage(Component.text(bossNameColor + bossName + " §cперешёл на 2 фазу!"));
-                });
+                getDamagers().forEach(player -> player.sendMessage(Component.newline().append(bossNameComponent).append(ComponentUtils.gradient("#A3E1EE", "#EC0D46", " перешёл на 2 фазу!")).append(Component.newline())));
             }
             isSecondPhase = true;
         }
@@ -233,11 +250,21 @@ public class Dragon extends Boss {
         }
 
         Player player = event.getPlayer();
+        if (getDamagers().contains(player)) {
+            deadPlayers.add(player.getUniqueId());
+            if (player.getAddress() != null) {
+                deadIPS.add(player.getAddress().getHostString());
+            }
+        }
+
         if (DragonAbilities.removeEntityFromTeam(player)) {
             player.setGlowing(false);
             TeamUtils.returnTeamBefore(player);
         }
-        if (boss.getHealth() > 200) {
+        if (boss.getHealth() > saveDamageHealth) {
+            if (getDamagers().contains(player)) {
+                player.sendMessage("§cУ босса более " + saveDamageHealth + " ХП. Урон сброшен.");
+            }
             removeDamager(player);
         }
     }
@@ -249,8 +276,11 @@ public class Dragon extends Boss {
         }
 
         if (event.getEntity() instanceof Player player) {
-            if (isNear(player) && !boss.isDead() && player.isGliding()) {
-                player.setGliding(false);
+            if (isNear(player) && (getDamagers().contains(player) || containsDamagers(player))) {
+                if (event.isGliding()) {
+                    player.setGliding(false);
+                    event.setCancelled(true);
+                }
             }
         }
     }
@@ -269,7 +299,7 @@ public class Dragon extends Boss {
     }
 
     @Override
-    protected boolean isBlackListEffect(PotionEffect effect) {
+    protected boolean isBlackListEffect(PotionEffect effect, Player player) {
         if (effect == null) {
             return false;
         }
@@ -280,5 +310,13 @@ public class Dragon extends Boss {
     @Override
     protected void invulnerableBossDamage() {
         Particles.sphere(boss.getLocation(), Color.PURPLE, 10);
+    }
+
+    public long getLastAbility() {
+        return lastAbility;
+    }
+
+    public int getPhase() {
+        return phase;
     }
 }

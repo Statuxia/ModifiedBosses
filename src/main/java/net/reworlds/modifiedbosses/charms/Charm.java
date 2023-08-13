@@ -1,6 +1,5 @@
 package net.reworlds.modifiedbosses.charms;
 
-import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
@@ -16,7 +15,6 @@ import static org.bukkit.potion.PotionEffectType.*;
 public class Charm {
 
     private final int level;
-    @Getter
     private ItemStack charm;
     private String rawName;
     private String name;
@@ -89,6 +87,10 @@ public class Charm {
                 return null;
             }
         }
+    }
+
+    public ItemStack getCharm() {
+        return charm;
     }
 
     private void makeItem() {

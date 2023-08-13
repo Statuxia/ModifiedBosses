@@ -2,6 +2,7 @@ package net.reworlds.modifiedbosses.respawn;
 
 import net.reworlds.modifiedbosses.ModifiedBosses;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -28,9 +29,11 @@ public class RespawnTimer {
         this.percent = seconds / 100.0D;
         this.current = new AtomicInteger(seconds);
         this.dummy = dummy;
+        Chunk chunk = dummy.getChunk();
         bar.setVisible(true);
 
         task = Bukkit.getScheduler().runTaskTimer(ModifiedBosses.getINSTANCE(), () -> {
+            chunk.load(true);
             if (current.get() <= 0 || dummy.isDead()) {
                 stop();
                 return;
@@ -53,7 +56,7 @@ public class RespawnTimer {
             }
             players.forEach(bar::addPlayer);
 
-            bar.setTitle(title + ": " + secondsToTimerFormat(current.get()));
+            bar.setTitle(title + "§r: " + secondsToTimerFormat(current.get()));
         }, 0, 20);
 
         TIMERS.put(id, this);

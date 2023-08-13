@@ -1,22 +1,23 @@
 package net.reworlds.modifiedbosses.utils;
 
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class TeamUtils {
-    private static final HashMap<ChatColor, Team> teams = new HashMap<>();
+    private static final HashMap<NamedTextColor, Team> teams = new HashMap<>();
     private static final HashMap<Player, Team> teamBefore = new HashMap<>();
+    private static final HashMap<Entity, Team> entityTeamBefore = new HashMap<>();
 
 
-    public static @NotNull Team getTeam(@NotNull ChatColor teamColor, @NotNull String tag) {
+    public static @NotNull Team getTeam(@NotNull NamedTextColor teamColor, @NotNull String tag) {
         Team team = teams.get(teamColor);
         if (team != null) {
             return team;
@@ -29,12 +30,12 @@ public class TeamUtils {
             team.setAllowFriendlyFire(true);
             team.setCanSeeFriendlyInvisibles(false);
         }
-        team.setColor(teamColor);
+        team.color(teamColor);
         teams.put(teamColor, team);
         return team;
     }
 
-    public static @NotNull Team getTeam(@NotNull ChatColor teamColor) {
+    public static @NotNull Team getTeam(@NotNull NamedTextColor teamColor) {
         return getTeam(teamColor, "team");
     }
 
@@ -47,8 +48,24 @@ public class TeamUtils {
         });
     }
 
+    public static void saveTeamBefore(@NotNull Entity entity) {
+        Bukkit.getScoreboardManager().getMainScoreboard().getTeams().forEach(team -> {
+            if (team.hasEntity(entity)) {
+                entityTeamBefore.put(entity, team);
+                team.removeEntity(entity);
+            }
+        });
+    }
+
     public static void returnTeamBefore(@NotNull Player player) {
         Team team = teamBefore.remove(player);
+        if (team != null) {
+            team.addEntity(player);
+        }
+    }
+
+    public static void returnTeamBefore(@NotNull Entity player) {
+        Team team = entityTeamBefore.remove(player);
         if (team != null) {
             team.addEntity(player);
         }

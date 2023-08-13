@@ -2,9 +2,11 @@ package net.reworlds.modifiedbosses.charms;
 
 import com.google.common.collect.ImmutableList;
 import net.reworlds.modifiedbosses.ModifiedBosses;
+import net.reworlds.modifiedbosses.items.SpecialItems;
 import net.reworlds.modifiedbosses.utils.ComponentUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;

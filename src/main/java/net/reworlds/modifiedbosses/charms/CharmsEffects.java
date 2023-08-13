@@ -1,6 +1,5 @@
 package net.reworlds.modifiedbosses.charms;
 
-import lombok.Getter;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -9,10 +8,7 @@ import java.util.List;
 
 public class CharmsEffects {
 
-    @Getter
     private static final HashMap<String, PotionEffect> effects = new HashMap<>();
-
-    @Getter
     private static final List<PotionEffectType> positiveEffects = List.of(
             PotionEffectType.ABSORPTION,
             PotionEffectType.CONDUIT_POWER,
@@ -25,6 +21,31 @@ public class CharmsEffects {
             PotionEffectType.REGENERATION,
             PotionEffectType.SATURATION,
             PotionEffectType.SLOW_FALLING,
-            PotionEffectType.WATER_BREATHING
+            PotionEffectType.WATER_BREATHING,
+            PotionEffectType.SPEED
     );
+
+    private static final List<PotionEffectType> negativeEffects = List.of(
+            PotionEffectType.SLOW,
+            PotionEffectType.SLOW_DIGGING,
+            PotionEffectType.CONFUSION,
+            PotionEffectType.BLINDNESS,
+            PotionEffectType.DARKNESS,
+            PotionEffectType.WITHER,
+            PotionEffectType.POISON,
+            PotionEffectType.HUNGER,
+            PotionEffectType.WEAKNESS
+    );
+
+    public static HashMap<String, PotionEffect> getEffects() {
+        return effects;
+    }
+
+    public static List<PotionEffectType> getPositiveEffects() {
+        return positiveEffects;
+    }
+
+    public static List<PotionEffectType> getNegativeEffects() {
+        return negativeEffects;
+    }
 }

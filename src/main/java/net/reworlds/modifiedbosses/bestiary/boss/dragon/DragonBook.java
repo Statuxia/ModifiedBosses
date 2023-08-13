@@ -19,12 +19,13 @@ public class DragonBook {
                                                         
                             Не закрывает портал, не восстанавливает столбы и не спавнит яйцо после сметри.
                             """).appendNewline().append(Component.text("• §nДроп§r")
-                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/bdragondrop"))
+                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/bestiary dragon drop"))
                     .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Посмотреть дроп")))),
             Component.text(
                     """
                             Характеристики:
                             • 2000 ХП
+                            • Дроп со 100+ Урона
                             • Не получает урон от взрывов
                             • Неуязвим, если рядом кристаллы
                             • Дракон и кристаллы подсвечиваются

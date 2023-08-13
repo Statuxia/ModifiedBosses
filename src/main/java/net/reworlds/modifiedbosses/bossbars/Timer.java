@@ -8,10 +8,7 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Timer {
@@ -23,7 +20,7 @@ public class Timer {
 
     private BukkitTask task;
 
-    public Timer(Player player, String id, int seconds, String title, BarColor color) {
+    public Timer(Player player, int seconds, String title, BarColor color) {
         this.bar = Bukkit.createBossBar(title, color, BarStyle.SOLID);
         this.seconds = seconds;
         this.percent = seconds / 100.0D;
@@ -42,8 +39,8 @@ public class Timer {
 
     }
 
-    public static Timer of(Player player, String id, int seconds, String title, BarColor color) {
-        return new Timer(player, id, seconds, title, color);
+    public static Timer of(Player player, int seconds, String title, BarColor color) {
+        return new Timer(player, seconds, title, color);
     }
 
     public void stop() {
